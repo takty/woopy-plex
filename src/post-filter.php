@@ -29,7 +29,7 @@ class PostFilter {
 	private function __construct() {}
 
 	public function add_filter_taxonomy( string $tax, string $label, string $var = null ) {
-		if ( empty( $var ) ) $var = $tax;
+		$var = $var ?? $tax;
 		register_taxonomy( $tax, null, [
 			'label'             => $label,
 			'show_in_nav_menus' => false,

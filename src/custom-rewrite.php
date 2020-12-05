@@ -81,8 +81,7 @@ class CustomRewrite {
 	}
 
 	public function get_query_var( string $var, string $default = '' ) {
-		if ( isset( $this->_vars[ $var ] ) ) return $this->_vars[ $var ];
-		return $default;
+		return $this->_vars[ $var ] ?? $default;
 	}
 
 	public function get_invalid_pagename() {
@@ -121,7 +120,7 @@ class CustomRewrite {
 		$rewrite = $wp_rewrite->wp_rewrite_rules();
 		if ( empty( $rewrite ) ) return '';
 
-		$pathinfo         = isset( $_SERVER['PATH_INFO'] ) ? $_SERVER['PATH_INFO'] : '';
+		$pathinfo         = $_SERVER['PATH_INFO'] ?? '';
 		list( $pathinfo ) = explode( '?', $pathinfo );
 		$pathinfo         = str_replace( "%", "%25", $pathinfo );
 

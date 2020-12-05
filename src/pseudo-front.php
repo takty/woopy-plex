@@ -128,11 +128,7 @@ class PseudoFront {
 	private function _get_front_label( array $slugs ) {
 		$ls = [];
 		foreach ( $slugs as $s ) {
-			if ( isset( $this->_slug_to_label[ $s ] ) ) {
-				$ls[] = $this->_slug_to_label[ $s ];
-			} else {
-				$ls[] = $s;
-			}
+			$ls[] = $this->_slug_to_label[ $s ] ?? $s;
 		}
 		if ( $this->_label_format ) {
 			return sprintf( $this->_label_format, ...$ls );
@@ -173,11 +169,11 @@ class PseudoFront {
 
 	public function _cb_body_class( array $classes ) {  // Private
 		$vars = \st\custom_rewrite\get_structures( 'var' );
-		$clss = array_map( function ( $var ) {
+		$cs = array_map( function ( $var ) {
 			$val = \st\custom_rewrite\get_query_var( $var );
 			return str_replace( '_', '-', "$var-$val" );
 		}, $vars );
-		return array_merge( $classes, $clss );
+		return array_merge( $classes, $cs );
 	}
 
 
