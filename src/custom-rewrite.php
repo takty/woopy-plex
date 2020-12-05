@@ -5,7 +5,7 @@ namespace st;
  * Custom Rewrite
  *
  * @author Takuto Yanagida @ Space-Time Inc.
- * @version 2020-11-16
+ * @version 2020-12-05
  *
  */
 

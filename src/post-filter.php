@@ -5,12 +5,12 @@ namespace st;
  * Post Filter
  *
  * @author Takuto Yanagida @ Space-Time Inc.
- * @version 2020-11-16
+ * @version 2020-12-05
  *
  */
 
 
-require_once __DIR__ . '/multi-front.php';
+require_once __DIR__ . '/pseudo-front.php';
 
 
 class PostFilter {
@@ -21,14 +21,15 @@ class PostFilter {
 		return self::$_instance;
 	}
 
-	private $_taxonomies = [];
+	private $_var_to_taxonomy = [];
 	private $_post_types = [];
 	private $_filtered_taxonomies = [];
 	private $_suppress_get_terms_filter = false;
 
 	private function __construct() {}
 
-	public function add_filter_taxonomy( string $tax, string $label ) {
+	public function add_filter_taxonomy( string $tax, string $label, string $var = null ) {
+		if ( empty( $var ) ) $var = $tax;
 		register_taxonomy( $tax, null, [
 			'label'             => $label,
 			'show_in_nav_menus' => false,
@@ -38,13 +39,13 @@ class PostFilter {
 			'rewrite'           => false,
 		] );
 		foreach ( $this->_post_types as $pt ) register_taxonomy_for_object_type( $tax, $pt );
-		$this->_taxonomies[] = $tax;
+		$this->_var_to_taxonomy[ $var ] = $tax;
 	}
 
 	public function add_filtered_post_type( $post_type_s ) {
 		if ( ! is_array( $post_type_s ) ) $post_type_s = [ $post_type_s ];
 		foreach ( $post_type_s as $pt ) {
-			foreach ( $this->_taxonomies as $tax ) register_taxonomy_for_object_type( $tax, $pt );
+			foreach ( $this->_var_to_taxonomy as $tax ) register_taxonomy_for_object_type( $tax, $pt );
 		}
 		$this->_post_types = array_merge( $this->_post_types, $post_type_s );
 	}
@@ -101,9 +102,10 @@ class PostFilter {
 		if ( $ret ) return $ret;
 		$ret = [];
 
-		$taxes = \st\custom_rewrite\get_structures( 'var' );
-		foreach ( $taxes as $tax ) {
-			if ( ! in_array( $tax, $this->_taxonomies, true ) ) continue;
+		$vars = \st\custom_rewrite\get_structures( 'var' );
+		foreach ( $vars as $var ) {
+			if ( ! isset( $this->_var_to_taxonomy[ $var ] ) ) continue;
+			$tax = $this->_var_to_taxonomy[ $var ];
 			$term = get_term_by( 'slug', get_query_var( $tax ), $tax );
 			if ( $term === false ) continue;
 			$ret[] = $term->term_taxonomy_id;
@@ -212,9 +214,10 @@ class PostFilter {
 		if ( ! is_admin() || ! is_a( $post, 'WP_Post' ) ) return $vars;
 		if ( ! in_array( $post->post_type, $this->_post_types, true ) ) return $vars;
 
-		$taxes = \st\custom_rewrite\get_structures( 'var' );
-		foreach ( $taxes as $tax ) {
-			if ( ! in_array( $tax, $this->_taxonomies, true ) ) continue;
+		$vars = \st\custom_rewrite\get_structures( 'var' );
+		foreach ( $vars as $var ) {
+			if ( ! isset( $this->_var_to_taxonomy[ $var ] ) ) continue;
+			$tax = $this->_var_to_taxonomy[ $var ];
 			$ts = get_the_terms( $post->ID, $tax );
 			if ( ! is_array( $ts ) ) return $vars;
 			$term_slug = get_query_var( $tax );
@@ -235,13 +238,12 @@ class PostFilter {
 		$taxes = [];
 		$slugs_array = [];
 		foreach ( \st\custom_rewrite\get_structures() as $st ) {
-			if ( in_array( $st['var'], $this->_taxonomies, true ) ) {
-				$taxes[] = $st['var'];
-				$slugs_array[] = $st['slugs'];
-			}
+			if ( ! isset( $this->_var_to_taxonomy[ $st['var'] ] ) ) continue;
+			$taxes[] = $this->_var_to_taxonomy[ $st['var'] ];
+			$slugs_array[] = $st['slugs'];
 		}
-		$is_filterd = in_array( $taxonomy, $this->_filtered_taxonomies, true );
-		if ( ! $is_filterd && ! in_array( $taxonomy, $taxes, true ) ) return;
+		$is_filtered = in_array( $taxonomy, $this->_filtered_taxonomies, true );
+		if ( ! $is_filtered && ! in_array( $taxonomy, $taxes, true ) ) return;
 
 		if ( $is_filtered ) {
 			$tars = [ $term ];
@@ -250,7 +252,7 @@ class PostFilter {
 		}
 		global $wpdb;
 		$pts = "('" . implode( "', '", $this->_post_types ) . "')";
-		$slug_comb = \st\multi_front\generate_combination( $slugs_array );
+		$slug_comb = \st\pseudo_front\generate_combination( $slugs_array );
 
 		foreach ( $tars as $tar ) {
 			foreach ( $slug_comb as $slugs ) {

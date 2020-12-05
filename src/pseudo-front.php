@@ -2,10 +2,10 @@
 namespace st;
 /**
  *
- * Multi-Front
+ * Pseudo-Front
  *
  * @author Takuto Yanagida @ Space-Time Inc.
- * @version 2020-11-16
+ * @version 2020-12-05
  *
  */
 
@@ -13,9 +13,9 @@ namespace st;
 require_once __DIR__ . '/custom-rewrite.php';
 
 
-class MultiFront {
+class PseudoFront {
 
-	const ADMIN_QUERY_VAR = 'multi_front';
+	const ADMIN_QUERY_VAR = 'pseudo_front';
 
 	static private $_instance = null;
 	static public function instance() {
@@ -25,7 +25,7 @@ class MultiFront {
 
 	private $_slug_to_label = [];
 	private $_label_format = '';
-	private $_is_default_frant_bloginfo_enabled = true;
+	private $_is_default_front_bloginfo_enabled = true;
 
 	private $_suppress_redirect = false;
 
@@ -42,7 +42,7 @@ class MultiFront {
 	}
 
 	public function set_default_front_bloginfo_enabled( bool $flag ) {
-		$this->_is_default_frant_bloginfo_enabled = $flag;
+		$this->_is_default_front_bloginfo_enabled = $flag;
 		if ( $flag === false ) {
 			$key = $this->_get_default_key();
 			delete_option( "blogname_$key" );
@@ -185,9 +185,9 @@ class MultiFront {
 
 
 	public function _cb_admin_init() {  // Private
-		$skip_key = $this->_is_default_frant_bloginfo_enabled ? '' : $this->_get_default_key();
+		$skip_key = $this->_is_default_front_bloginfo_enabled ? '' : $this->_get_default_key();
 
-		add_settings_section( 'st-multi-front-section', __( 'Sites' ), function () {}, 'general' );
+		add_settings_section( 'st-pseudo-front-section', __( 'Sites' ), function () {}, 'general' );
 
 		foreach ( self::get_slug_combination() as $slugs ) {
 			$key = implode( '_', $slugs );
@@ -201,8 +201,8 @@ class MultiFront {
 
 			$title_bn = __( 'Site Title' ) . "<br>$title";
 			$title_bd = __( 'Tagline' )    . "<br>$title";
-			add_settings_field( $key_bn, $title_bn, function () use ( $key_bn ) { MultiFront::_cb_field_input( $key_bn ); }, 'general', 'st-multi-front-section' );
-			add_settings_field( $key_bd, $title_bd, function () use ( $key_bd ) { MultiFront::_cb_field_input( $key_bd ); }, 'general', 'st-multi-front-section' );
+			add_settings_field( $key_bn, $title_bn, function () use ( $key_bn ) { PseudoFront::_cb_field_input( $key_bn ); }, 'general', 'st-pseudo-front-section' );
+			add_settings_field( $key_bd, $title_bd, function () use ( $key_bd ) { PseudoFront::_cb_field_input( $key_bd ); }, 'general', 'st-pseudo-front-section' );
 		}
 	}
 
@@ -240,7 +240,7 @@ class MultiFront {
 		if ( empty( $page_id ) ) return;
 
 		$page_id = intval( $page_id );
-		$ids = array_reverse( get_post_ancestors( $page_id ) );  // Must contains the posts with (parent_id === 0) because of the algorithmn of WP_Posts_List_Table->_display_rows_hierarchical()
+		$ids = array_reverse( get_post_ancestors( $page_id ) );  // Must contains the posts with (parent_id === 0) because of the algorithm of WP_Posts_List_Table->_display_rows_hierarchical()
 		$ids[] = $page_id;
 
 		$ps = get_pages( [ 'child_of' => $page_id, 'sort_column' => 'menu_order', 'post_status' => 'publish,future,draft,pending,private' ] );
@@ -286,13 +286,13 @@ class MultiFront {
 // -----------------------------------------------------------------------------
 
 
-namespace st\multi_front;
+namespace st\pseudo_front;
 
-function generate_combination( array $arrays ) { return \st\MultiFront::generate_combination( $arrays ); }
+function generate_combination( array $arrays ) { return \st\PseudoFront::generate_combination( $arrays ); }
 
-function add_admin_labels( array $slug_to_label ) { \st\MultiFront::instance()->add_admin_labels( $slug_to_label ); }
-function set_admin_label_format( string $format ) { \st\MultiFront::instance()->set_admin_label_format( $format ); }
-function set_default_front_bloginfo_enabled( bool $flag ) { \st\MultiFront::instance()->set_default_front_bloginfo_enabled( $flag ); }
-function initialize() { \st\MultiFront::instance()->initialize(); }
+function add_admin_labels( array $slug_to_label ) { \st\PseudoFront::instance()->add_admin_labels( $slug_to_label ); }
+function set_admin_label_format( string $format ) { \st\PseudoFront::instance()->set_admin_label_format( $format ); }
+function set_default_front_bloginfo_enabled( bool $flag ) { \st\PseudoFront::instance()->set_default_front_bloginfo_enabled( $flag ); }
+function initialize() { \st\PseudoFront::instance()->initialize(); }
 
-function home_url( string $path = '', string $scheme = null, array $vars = [] ) { \st\MultiFront::instance()->home_url( $path, $scheme, $vars ); }
+function home_url( string $path = '', string $scheme = null, array $vars = [] ) { \st\PseudoFront::instance()->home_url( $path, $scheme, $vars ); }
