@@ -4,8 +4,8 @@ namespace st;
  *
  * Pseudo-Front
  *
- * @author Takuto Yanagida @ Space-Time Inc.
- * @version 2020-12-05
+ * @author Takuto Yanagida
+ * @version 2021-03-03
  *
  */
 
@@ -183,7 +183,7 @@ class PseudoFront {
 	public function _cb_admin_init() {  // Private
 		$skip_key = $this->_is_default_front_bloginfo_enabled ? '' : $this->_get_default_key();
 
-		add_settings_section( 'st-pseudo-front-section', __( 'Sites' ), function () {}, 'general' );
+		add_settings_section( 'pseudo-front-section', __( 'Sites' ), function () {}, 'general' );
 
 		foreach ( self::get_slug_combination() as $slugs ) {
 			$key = implode( '_', $slugs );
@@ -197,8 +197,8 @@ class PseudoFront {
 
 			$title_bn = __( 'Site Title' ) . "<br>$title";
 			$title_bd = __( 'Tagline' )    . "<br>$title";
-			add_settings_field( $key_bn, $title_bn, function () use ( $key_bn ) { PseudoFront::_cb_field_input( $key_bn ); }, 'general', 'st-pseudo-front-section' );
-			add_settings_field( $key_bd, $title_bd, function () use ( $key_bd ) { PseudoFront::_cb_field_input( $key_bd ); }, 'general', 'st-pseudo-front-section' );
+			add_settings_field( $key_bn, $title_bn, function () use ( $key_bn ) { PseudoFront::_cb_field_input( $key_bn ); }, 'general', 'pseudo-front-section' );
+			add_settings_field( $key_bd, $title_bd, function () use ( $key_bd ) { PseudoFront::_cb_field_input( $key_bd ); }, 'general', 'pseudo-front-section' );
 		}
 	}
 

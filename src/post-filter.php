@@ -4,8 +4,8 @@ namespace st;
  *
  * Post Filter
  *
- * @author Takuto Yanagida @ Space-Time Inc.
- * @version 2020-12-05
+ * @author Takuto Yanagida
+ * @version 2021-03-03
  *
  */
 
