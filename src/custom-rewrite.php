@@ -185,7 +185,7 @@ function _parse_request(): array {
 	$pathinfo         = str_replace( '%', '%25', $pathinfo );
 
 	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );
-	$home_path       = trim( parse_url( home_url(), PHP_URL_PATH ), '/' );
+	$home_path       = trim( parse_url( \home_url(), PHP_URL_PATH ), '/' );
 	$home_path_regex = sprintf( '|^%s|i', preg_quote( $home_path, '|' ) );
 	// phpcs:enable
 
@@ -254,7 +254,7 @@ function _is_page_request( string $req_path, string $req_file ): array {
  * @return string Modified URL.
  */
 function _replace_path( string $url, string $before, string $after ): string {
-	$home = trim( wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
+	$home = trim( wp_parse_url( \home_url(), PHP_URL_PATH ), '/' );
 	$home = empty( $home ) ? '/' : "/$home/";
 	$pu   = wp_parse_url( $url );
 
@@ -322,7 +322,7 @@ function _redirect( string $req_path, string $after ) {
 function _extract_vars( string $url ): array {
 	list( $path ) = explode( '?', $url );
 
-	$path = trim( str_replace( home_url(), '', $path ), '/' );
+	$path = trim( str_replace( \home_url(), '', $path ), '/' );
 	$ps   = explode( '/', $path );
 	$vars = array();
 	$sps  = array();
