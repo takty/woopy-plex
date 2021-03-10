@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-05
+ * @version 2021-03-10
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -77,11 +77,11 @@ function initialize() {
 /**
  * Retrieves the URL for the current site where the front end is accessible.
  *
- * @param string      $path (Optional) Path relative to the home URL.
- *                          Default is ''.
+ * @param string      $path   (Optional) Path relative to the home URL.
+ *                            Default is ''.
  * @param string|null $scheme (Optional) Scheme to give the home URL context.
- *                    Accepts 'http', 'https', 'relative', 'rest', or null.
- * @param array       $vars (Optional) An array of variable name to slug.
+ *                            Accepts 'http', 'https', 'relative', 'rest', or null.
+ * @param array       $vars   (Optional) An array of variable name to slug.
  * @return string Home URL link with optional path appended.
  */
 function home_url( string $path = '', ?string $scheme = null, array $vars = array() ): string {
@@ -142,7 +142,7 @@ function get_slug_combination(): array {
 /**
  * Retrieve the key of current query variables.
  *
- * @internal
+ * @access private
  *
  * @return string The key string.
  */
@@ -160,7 +160,7 @@ function _get_key(): string {
 /**
  * Retrieve the key of default query variables.
  *
- * @internal
+ * @access private
  *
  * @return string The key string.
  */
@@ -172,7 +172,7 @@ function _get_default_key(): string {
 /**
  * Retrieve the label of current query variables.
  *
- * @internal
+ * @access private
  *
  * @param string[] $slugs The slug combination.
  * @return string The label string.
@@ -197,7 +197,7 @@ function _get_front_label( array $slugs ): string {
 /**
  * Callback function for 'option_{$option}' filter.
  *
- * @internal
+ * @access private
  * @global \WP_Post $post
  *
  * @param string $value Value of the option.
@@ -219,9 +219,9 @@ function _cb_option_page_on_front( string $value ) {
 /**
  * Callback function for 'redirect_canonical' filter.
  *
- * @internal
+ * @access private
  *
- * @param string $redirect_url The redirect URL.
+ * @param string $redirect_url  The redirect URL.
  * @param string $requested_url The requested URL.
  * @return string The filtered string.
  */
@@ -235,7 +235,7 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
 /**
  * Callback function for 'option_{$option}' filter.
  *
- * @internal
+ * @access private
  *
  * @param string $value Value of the option.
  * @return string The filtered string.
@@ -251,7 +251,7 @@ function _cb_option_blogname( string $value ): string {
 /**
  * Callback function for 'option_{$option}' filter.
  *
- * @internal
+ * @access private
  *
  * @param string $value Value of the option.
  * @return string The filtered string.
@@ -267,7 +267,7 @@ function _cb_option_blogdescription( string $value ): string {
 /**
  * Callback function for 'body_class' filter.
  *
- * @internal
+ * @access private
  *
  * @param string[] $classes An array of body class names.
  * @return string[] The filtered array.
@@ -290,7 +290,7 @@ function _cb_body_class( array $classes ): array {
 /**
  * Callback function for 'admin_init' action.
  *
- * @internal
+ * @access private
  */
 function _cb_admin_init() {
 	$skip_key = _get_instance()->is_default_front_bloginfo_enabled ? '' : _get_default_key();
@@ -335,7 +335,7 @@ function _cb_admin_init() {
 /**
  * Function that fills the field with the desired form inputs.
  *
- * @internal
+ * @access private
  *
  * @param string $key The key of the field.
  */
@@ -350,7 +350,7 @@ function _cb_field_input( string $key ) {
 /**
  * Callback function for 'query_vars' filter.
  *
- * @internal
+ * @access private
  *
  * @param string[] $public_query_vars The array of allowed query variable names.
  * @return string[] The filtered array.
@@ -363,7 +363,7 @@ function _cb_query_vars( array $public_query_vars ): array {
 /**
  * Callback function for 'admin_menu' action.
  *
- * @internal
+ * @access private
  */
 function _cb_admin_menu() {
 	foreach ( get_slug_combination() as $slugs ) {
@@ -382,7 +382,7 @@ function _cb_admin_menu() {
 /**
  * Callback function for 'parse_query' action.
  *
- * @internal
+ * @access private
  * @global string $pagenow
 
  * @param \WP_Query $query The WP_Query instance (passed by reference).
@@ -423,9 +423,10 @@ function _cb_parse_query( \WP_Query $query ) {
 /**
  * Callback function for 'display_post_states' filter.
  *
- * @internal
+ * @access private
+ *
  * @param string[] $post_states An array of post display states.
- * @param \WP_Post $post The current post object.
+ * @param \WP_Post $post        The current post object.
  * @return string[] The filtered states.
  */
 function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
@@ -447,7 +448,8 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 /**
  * Callback function for 'admin_bar_menu' action.
  *
- * @internal
+ * @access private
+ *
  * @param \WP_Admin_Bar $wp_admin_bar WP_Admin_Bar instance, passed by reference.
  */
 function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
@@ -473,7 +475,8 @@ function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
 /**
  * Get instance.
  *
- * @internal
+ * @access private
+ *
  * @return object Instance.
  */
 function _get_instance(): object {

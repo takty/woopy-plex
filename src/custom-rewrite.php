@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-05
+ * @version 2021-03-10
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -167,7 +167,7 @@ function build_norm_path( array $vars = array() ): string {
 /**
  * Parse request to find query.
  *
- * @internal
+ * @access private
  * @see WP::parse_request()
  * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
  *
@@ -212,7 +212,7 @@ function _parse_request(): array {
 /**
  * Whether the request is for page.
  *
- * @internal
+ * @access private
  * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
  *
  * @param string $req_path Requested path.
@@ -246,11 +246,11 @@ function _is_page_request( string $req_path, string $req_file ): array {
 /**
  * Replace path.
  *
- * @internal
+ * @access private
  *
- * @param string $url Original URL.
+ * @param string $url    Original URL.
  * @param string $before Searched value.
- * @param string $after Replacement value.
+ * @param string $after  Replacement value.
  * @return string Modified URL.
  */
 function _replace_path( string $url, string $before, string $after ): string {
@@ -279,10 +279,10 @@ function _replace_path( string $url, string $before, string $after ): string {
 /**
  * Replace request.
  *
- * @internal
+ * @access private
  *
  * @param string $req_path Requested path.
- * @param string $after Replacement value.
+ * @param string $after    Replacement value.
  */
 function _replace_request( string $req_path, string $after ) {
 	// phpcs:disable
@@ -294,10 +294,10 @@ function _replace_request( string $req_path, string $after ) {
 /**
  * Redirect.
  *
- * @internal
+ * @access private
  *
  * @param string $req_path Requested path.
- * @param string $after Replacement value.
+ * @param string $after    Replacement value.
  */
 function _redirect( string $req_path, string $after ) {
 	// phpcs:disable
@@ -314,7 +314,7 @@ function _redirect( string $req_path, string $after ) {
 /**
  * Extract variable slugs from URL.
  *
- * @internal
+ * @access private
  *
  * @param string $url URL.
  * @return array An array of variable name to slug.
@@ -354,7 +354,7 @@ function _extract_vars( string $url ): array {
 /**
  * Callback function for 'after_setup_theme' hook.
  *
- * @internal
+ * @access private
  */
 function _cb_after_setup_theme() {
 	$inst = _get_instance();
@@ -406,7 +406,7 @@ function _cb_after_setup_theme() {
 /**
  * Callback function for 'query_vars' filter.
  *
- * @internal
+ * @access private
  *
  * @param string[] $public_query_vars The array of allowed query variable names.
  * @return string[] The filtered array.
@@ -422,7 +422,7 @@ function _cb_query_vars( array $public_query_vars ): array {
 /**
  * Callback function for 'request' filter.
  *
- * @internal
+ * @access private
  *
  * @param array $query_vars The array of requested query variables.
  * @return array The filtered array.
@@ -441,9 +441,9 @@ function _cb_request( array $query_vars ): array {
 /**
  * Callback function for 'redirect_canonical' filter.
  *
- * @internal
+ * @access private
  *
- * @param string $redirect_url The redirect URL.
+ * @param string $redirect_url  The redirect URL.
  * @param string $requested_url The requested URL.
  * @return string The redirect URL.
  */
@@ -462,10 +462,10 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
 /**
  * Callback function for 'post_link' filter.
  *
- * @internal
+ * @access private
  *
  * @param string    $permalink The post's permalink.
- * @param ?\WP_Post $post The post in question.
+ * @param ?\WP_Post $post      The post in question.
  * @return string The filtered URL.
  */
 function _cb_post_link( string $permalink, ?\WP_Post $post ): string {
@@ -488,7 +488,7 @@ function _cb_post_link( string $permalink, ?\WP_Post $post ): string {
 /**
  * Callback function for 'link' filter.
  *
- * @internal
+ * @access private
  *
  * @param string $permalink The post's permalink.
  * @return string The filtered URL.
@@ -510,7 +510,7 @@ function _cb_link( string $permalink ): string {
 /**
  * Get instance.
  *
- * @internal
+ * @access private
  *
  * @return object Instance.
  */

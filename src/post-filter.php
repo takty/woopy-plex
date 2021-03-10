@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-05
+ * @version 2021-03-10
  */
 
 namespace wpinc\plex\post_filter;
@@ -14,9 +14,9 @@ require_once __DIR__ . '/pseudo-front.php';
 /**
  * Register taxonomy used for filtering.
  *
- * @param string  $tax The taxonomy used for filtering.
+ * @param string  $tax   The taxonomy used for filtering.
  * @param string  $label The label of the taxonomy.
- * @param ?string $var (Optional) The query variable name related to the taxonomy.
+ * @param ?string $var   (Optional) The query variable name related to the taxonomy.
  */
 function add_filter_taxonomy( string $tax, string $label, ?string $var = null ) {
 	$var  = $var ?? $tax;
@@ -97,11 +97,11 @@ function initialize() {
 /**
  * Build term relationships for JOIN clause.
  *
- * @internal
+ * @access private
  * @global $wpdb;
  *
  * @param int    $count The number of joined tables.
- * @param string $type The operation type.
+ * @param string $type  The operation type.
  * @return string The JOIN clause.
  */
 function _build_join_term_relationships( int $count, string $type = 'INNER' ): string {
@@ -116,7 +116,7 @@ function _build_join_term_relationships( int $count, string $type = 'INNER' ): s
 /**
  * Build term relationships for WHERE clause.
  *
- * @internal
+ * @access private
  * @global $wpdb;
  *
  * @param array $term_taxonomies The array of term taxonomy ids.
@@ -134,7 +134,7 @@ function _build_where_term_relationships( array $term_taxonomies ): string {
 /**
  * Retrieve term taxonomy ids.
  *
- * @internal
+ * @access private
  *
  * @return array The ids.
  */
@@ -168,13 +168,13 @@ function _get_term_taxonomy_ids(): array {
 /**
  * Callback function for 'get_{$adjacent}_post_join' filter.
  *
- * @internal
+ * @access private
  *
- * @param string   $join The JOIN clause in the SQL.
- * @param bool     $in_same_term Whether post should be in a same taxonomy term.
- * @param array    $excluded_terms Array of excluded term IDs.
- * @param string   $taxonomy Used to identify the term used when $in_same_term is true.
- * @param \WP_Post $post WP_Post object.
+ * @param string       $join           The JOIN clause in the SQL.
+ * @param bool         $in_same_term   Whether post should be in a same taxonomy term.
+ * @param array|string $excluded_terms Array of excluded term IDs.
+ * @param string       $taxonomy       Used to identify the term used when $in_same_term is true.
+ * @param \WP_Post     $post           WP_Post object.
  * @return string The filtered clause.
  */
 function _cb_get_adjacent_post_join( string $join, bool $in_same_term, $excluded_terms, string $taxonomy, \WP_Post $post ): string {
@@ -192,16 +192,16 @@ function _cb_get_adjacent_post_join( string $join, bool $in_same_term, $excluded
 /**
  * Callback function for 'get_{$adjacent}_post_where' filter.
  *
- * @internal
+ * @access private
  *
- * @param string   $where The WHERE clause in the SQL.
- * @param bool     $in_same_term Whether post should be in a same taxonomy term.
- * @param array    $excluded_terms Array of excluded term IDs.
- * @param string   $taxonomy Used to identify the term used when $in_same_term is true.
- * @param \WP_Post $post WP_Post object.
+ * @param string       $where          The WHERE clause in the SQL.
+ * @param bool         $in_same_term   Whether post should be in a same taxonomy term.
+ * @param array|string $excluded_terms Array of excluded term IDs.
+ * @param string       $taxonomy       Used to identify the term used when $in_same_term is true.
+ * @param \WP_Post     $post           WP_Post object.
  * @return string The filtered clause.
  */
-function _cb_get_adjacent_post_where( string $where, bool $in_same_term, array $excluded_terms, string $taxonomy, \WP_Post $post ): string {
+function _cb_get_adjacent_post_where( string $where, bool $in_same_term, $excluded_terms, string $taxonomy, \WP_Post $post ): string {
 	$inst = _get_instance();
 	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
 		return $where;
@@ -220,9 +220,9 @@ function _cb_get_adjacent_post_where( string $where, bool $in_same_term, array $
 /**
  * Callback function for 'getarchives_join' filter.
  *
- * @internal
+ * @access private
  *
- * @param string $sql_join Portion of SQL query containing the JOIN clause.
+ * @param string $sql_join    Portion of SQL query containing the JOIN clause.
  * @param array  $parsed_args An array of default arguments.
  * @return string The filtered clause.
  */
@@ -244,9 +244,9 @@ function _cb_getarchives_join( string $sql_join, array $parsed_args ): string {
 /**
  * Callback function for 'getarchives_where' filter.
  *
- * @internal
+ * @access private
  *
- * @param string $sql_where Portion of SQL query containing the WHERE clause.
+ * @param string $sql_where   Portion of SQL query containing the WHERE clause.
  * @param array  $parsed_args An array of default arguments.
  * @return string The filtered clause.
  */
@@ -272,10 +272,10 @@ function _cb_getarchives_where( string $sql_where, array $parsed_args ): string 
 /**
  * Callback function for 'posts_join' filter.
  *
- * @internal
+ * @access private
  * @global $wpdb
  *
- * @param string    $join The JOIN BY clause of the query.
+ * @param string    $join  The JOIN BY clause of the query.
  * @param \WP_Query $query The WP_Query instance (passed by reference).
  * @return string The filtered clause.
  */
@@ -300,7 +300,7 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 /**
  * Callback function for 'posts_where' filter.
  *
- * @internal
+ * @access private
  * @global $wpdb
  *
  * @param string    $where The WHERE clause of the query.
@@ -331,11 +331,11 @@ function _cb_posts_where( string $where, \WP_Query $query ): string {
 /**
  * Callback function for 'posts_groupby' filter.
  *
- * @internal
+ * @access private
  * @global $wpdb
  *
  * @param string    $groupby The GROUP BY clause of the query.
- * @param \WP_Query $query The WP_Query instance (passed by reference).
+ * @param \WP_Query $query   The WP_Query instance (passed by reference).
  * @return string The filtered clause.
  */
 function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
@@ -364,7 +364,7 @@ function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
 /**
  * Callback function for post_link filter of the custom rewrite.
  *
- * @internal
+ * @access private
  *
  * @param array     $vars The query vars.
  * @param ?\WP_Post $post The post in question.
@@ -409,10 +409,10 @@ function _cb_filter_by_taxonomy( array $vars, ?\WP_Post $post = null ): array {
 /**
  * Callback function for 'edited_term_taxonomy' action.
  *
- * @internal
+ * @access private
  * @global $wpdb
  *
- * @param int    $tt_id Term taxonomy ID.
+ * @param int    $tt_id    Term taxonomy ID.
  * @param string $taxonomy Taxonomy slug.
  */
 function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
@@ -476,7 +476,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 /**
  * Get instance.
  *
- * @internal
+ * @access private
  *
  * @return object Instance.
  */
