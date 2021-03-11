@@ -48,7 +48,24 @@ function initialize( $args = array() ) {
 }
 
 function _cb_term_description( $value, $term_id, $taxonomy, $context ) {
+	$def_key = _get_default_key();
+	$cur_key = _get_current_key();
 
+	$inst = _get_instance();
+	if ( ! $term_id && ( is_tax() || is_tag() || is_category() ) ) {
+		$t = get_queried_object();
+		if ( $t ) {
+			$term_id = $t->term_id;
+		}
+	}
+	if ( false === $lang ) {
+		$lang = $this->_core->get_site_lang();
+	}
+	$d = get_term_meta( $term_id, $inst->_key_pre_description . $lang, true );
+	if ( empty( $d ) ) {
+		return \term_description( $term_id );
+	}
+	return $d;
 }
 
 /**
@@ -144,6 +161,19 @@ function _get_current_key(): string {
 		$slugs[] = $v;
 	}
 	return implode( '_', $slugs );
+}
+
+function _get_default_slugs(): array {
+	$inst    = _get_instance();
+	$structs = \wpinc\plex\custom_rewrite\get_structures();
+	$slugs   = array();
+
+	foreach ( $structs as $struct ) {
+		if ( in_array( $struct['var'], $inst->vars, true ) ) {
+			$slugs[] = $struct['default_slug'];
+		}
+	}
+	return $slugs;
 }
 
 /**
@@ -289,13 +319,12 @@ function _cb_taxonomy_edit_form_fields( $term, $taxonomy ) {
 	$has_def_sg = in_array( $taxonomy, $inst->tax_with_def_sn, true );
 
 	if ( $has_def_sg ) {
-		$lab_pf = _get_admin_label( $slugs );
+		$lab_pf = _get_admin_label( _get_default_slugs() );
 		$lab_n  = "$lab_base_n $lab_pf";
 
 		$id_sn   = $inst->key_pre_singular_name . $def_key;
 		$name_sn = $inst->key_pre_singular_name . "array[$def_key]";
 		$val_sn  = isset( $t_meta[ $id_sn ] ) ? $t_meta[ $id_sn ][0] : '';
-
 		_echo_name_field( $lab_n . __( ' (Singular Form)' ), $id_sn, $name_sn, $val_sn );
 	}
 	foreach ( get_slug_combination() as $slugs ) {
