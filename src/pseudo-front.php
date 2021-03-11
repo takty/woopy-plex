@@ -177,7 +177,7 @@ function _get_default_key(): string {
  * @param string[] $slugs The slug combination.
  * @return string The label string.
  */
-function _get_front_label( array $slugs ): string {
+function _get_admin_label( array $slugs ): string {
 	$inst = _get_instance();
 
 	$ls = array();
@@ -302,7 +302,7 @@ function _cb_admin_init() {
 		if ( $key === $skip_key ) {
 			continue;
 		}
-		$title = esc_html( _get_front_label( $slugs ) );
+		$title = esc_html( _get_admin_label( $slugs ) );
 
 		$key_bn = "blogname_$key";
 		$key_bd = "blogdescription_$key";
@@ -372,7 +372,7 @@ function _cb_admin_menu() {
 			continue;
 		}
 		$key   = implode( '_', $slugs );
-		$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( _get_front_label( $slugs ) );
+		$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( _get_admin_label( $slugs ) );
 
 		$slug = add_query_arg( ADMIN_QUERY_VAR, $page->ID, 'edit.php?post_type=page' );
 		add_pages_page( '', $title, 'edit_pages', $slug );
@@ -460,7 +460,7 @@ function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
 			$node = array(
 				'id'     => 'view-site-' . implode( '-', $slugs ),
 				'parent' => 'site-name',
-				'title'  => esc_html( _get_front_label( $slugs ) ),
+				'title'  => esc_html( _get_admin_label( $slugs ) ),
 				'href'   => \home_url( $path ),
 			);
 			$wp_admin_bar->add_menu( $node );
