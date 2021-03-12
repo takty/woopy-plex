@@ -10,6 +10,7 @@
 namespace wpinc\plex\pseudo_front;
 
 require_once __DIR__ . '/custom-rewrite.php';
+require_once __DIR__ . '/util.php';
 
 const ADMIN_QUERY_VAR = 'pseudo_front';
 
@@ -100,33 +101,6 @@ function home_url( string $path = '', ?string $scheme = null, array $vars = arra
 
 
 /**
- * Generate combinations of given strings.
- *
- * @param array $arrays An array of string arrays.
- * @return array The array of combinations.
- */
-function generate_combination( array $arrays ): array {
-	$counts = array_map( 'count', $arrays );
-	$total  = array_product( $counts );
-	$res    = array();
-	$cycles = array();
-
-	$c = $total;
-	foreach ( $arrays as $k => $vs ) {
-		$c = $c / $counts[ $k ];
-
-		$cycles[ $k ] = $c;
-	}
-
-	for ( $i = 0; $i < $total; ++$i ) {
-		foreach ( $arrays as $k => $vs ) {
-			$res[ $i ][ $k ] = $vs[ ( $i / $cycles[ $k ] ) % $counts[ $k ] ];
-		}
-	}
-	return $res;
-}
-
-/**
  * Generate slug combinations.
  *
  * @return array The array of slug combinations.
@@ -134,7 +108,7 @@ function generate_combination( array $arrays ): array {
 function get_slug_combination(): array {
 	static $ret = null;
 	if ( null === $ret ) {
-		$ret = generate_combination( \wpinc\plex\custom_rewrite\get_structures( 'slugs' ) );
+		$ret = \wpinc\plex\generate_combination( \wpinc\plex\custom_rewrite\get_structures( 'slugs' ) );
 	}
 	return $ret;
 }

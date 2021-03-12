@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-10
+ * @version 2021-03-12
  */
 
 namespace wpinc\plex\custom_rewrite;

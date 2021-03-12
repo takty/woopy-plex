@@ -4,12 +4,12 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-10
+ * @version 2021-03-12
  */
 
 namespace wpinc\plex\post_filter;
 
-require_once __DIR__ . '/pseudo-front.php';
+require_once __DIR__ . '/util.php';
 
 /**
  * Register taxonomy used for filtering.
@@ -439,7 +439,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 		$tars = get_terms( $inst->filtered_taxonomies, array( 'hide_empty' => false ) );
 	}
 	$pts       = "('" . implode( "', '", $inst->post_types ) . "')";
-	$slug_comb = \wpinc\plex\pseudo_front\generate_combination( $slugs_array );
+	$slug_comb = \wpinc\plex\generate_combination( $slugs_array );
 
 	global $wpdb;
 	foreach ( $tars as $tar ) {
