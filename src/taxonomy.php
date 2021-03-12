@@ -4,12 +4,13 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-11
+ * @version 2021-03-12
  */
 
 namespace wpinc\plex\taxonomy;
 
 require_once __DIR__ . '/custom-rewrite.php';
+require_once __DIR__ . '/util.php';
 
 /**
  * The.
@@ -38,34 +39,10 @@ function initialize( $args = array() ) {
 	$inst->key_pre_singular_name = $args['singular_name_key_prefix'];
 	$inst->key_pre_description   = $args['description_key_prefix'];
 
-	// add_filter( 'single_cat_title', '\wpinc\plex\taxonomy\_cb_single_term_title' );
-	// add_filter( 'single_tag_title', '\wpinc\plex\taxonomy\_cb_single_term_title' );
-	// add_filter( 'single_term_title', '\wpinc\plex\taxonomy\_cb_single_term_title' );
-
-	// 'get_object_terms' for object terms
-	// $_term = apply_filters( 'get_term', $_term, $taxonomy );
+	add_filter( 'get_object_terms', '\wpinc\plex\taxonomy\_cb_get_terms', 10 );
+	add_filter( 'get_terms', '\wpinc\plex\taxonomy\_cb_get_terms', 10 );
+	add_filter( 'get_term', '\wpinc\plex\taxonomy\_cb_get_term', 10 );
 	add_filter( 'term_description', '\wpinc\plex\taxonomy\_cb_term_description', 10, 4 );
-}
-
-function _cb_term_description( $value, $term_id, $taxonomy, $context ) {
-	$def_key = _get_default_key();
-	$cur_key = _get_current_key();
-
-	$inst = _get_instance();
-	if ( ! $term_id && ( is_tax() || is_tag() || is_category() ) ) {
-		$t = get_queried_object();
-		if ( $t ) {
-			$term_id = $t->term_id;
-		}
-	}
-	if ( false === $lang ) {
-		$lang = $this->_core->get_site_lang();
-	}
-	$d = get_term_meta( $term_id, $inst->_key_pre_description . $lang, true );
-	if ( empty( $d ) ) {
-		return \term_description( $term_id );
-	}
-	return $d;
 }
 
 /**
@@ -127,10 +104,14 @@ function get_slug_combination(): array {
 				$slugs_array[] = $struct['slugs'];
 			}
 		}
-		$ret = \wpinc\plex\pseudo_front\generate_combination( $slugs_array );
+		$ret = \wpinc\plex\generate_combination( $slugs_array );
 	}
 	return $ret;
 }
+
+
+// -----------------------------------------------------------------------------
+
 
 /**
  * Retrieve the key of default query variables.
@@ -140,18 +121,16 @@ function get_slug_combination(): array {
  * @return string The key string.
  */
 function _get_default_key(): string {
-	$inst    = _get_instance();
-	$structs = \wpinc\plex\custom_rewrite\get_structures();
-	$slugs   = array();
-
-	foreach ( $structs as $struct ) {
-		if ( in_array( $struct['var'], $inst->vars, true ) ) {
-			$slugs[] = $struct['default_slug'];
-		}
-	}
-	return implode( '_', $slugs );
+	return implode( '_', _get_default_slugs() );
 }
 
+/**
+ * Retrieve.
+ *
+ * @access private
+ *
+ * @return string The key string.
+ */
 function _get_current_key(): string {
 	$inst  = _get_instance();
 	$slugs = array();
@@ -163,6 +142,13 @@ function _get_current_key(): string {
 	return implode( '_', $slugs );
 }
 
+/**
+ * Retrieve.
+ *
+ * @access private
+ *
+ * @return string The key string.
+ */
 function _get_default_slugs(): array {
 	$inst    = _get_instance();
 	$structs = \wpinc\plex\custom_rewrite\get_structures();
@@ -175,6 +161,54 @@ function _get_default_slugs(): array {
 	}
 	return $slugs;
 }
+
+/**
+ * Retrieve.
+ *
+ * @access private
+ *
+ * @param array $args The.
+ * @return string The key string.
+ */
+function _get_argument_key( $args ): string {
+	if ( is_array( $args ) && ! empty( $args ) ) {
+		$key = _make_key_from_argument( $args );
+	} elseif ( is_string( $args ) && ! empty( $args ) ) {
+		$key = $args;
+	} else {
+		$key = _get_current_key();
+	}
+	return $key;
+}
+
+/**
+ * Retrieve.
+ *
+ * @access private
+ *
+ * @param array $args The.
+ * @return string The key string.
+ */
+function _make_key_from_argument( array $args ): string {
+	$inst    = _get_instance();
+	$structs = \wpinc\plex\custom_rewrite\get_structures();
+	$slugs   = array();
+
+	foreach ( $structs as $struct ) {
+		if ( in_array( $struct['var'], $inst->vars, true ) ) {
+			if ( isset( $args[ $struct['var'] ] ) ) {
+				$slugs[] = $args[ $struct['var'] ];
+			} else {
+				$slugs[] = $struct['default_slug'];
+			}
+		}
+	}
+	return implode( '_', $slugs );
+}
+
+
+// -----------------------------------------------------------------------------
+
 
 /**
  * The.
@@ -201,79 +235,17 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
 		add_action( "edited_$t", '\wpinc\plex\taxonomy\_cb_edited_taxonomy', 10, 2 );
 	}
 	$inst = _get_instance();
+
+	$inst->taxonomies = array_merge( $inst->taxonomies, $taxonomies );
 	if ( $args['has_singular_name'] ) {
-		$inst->tax_with_sn = array_merge( $inst->tax_with_sn, $taxonomies );
+		$inst->taxonomies_singular_name = array_merge( $inst->taxonomies_singular_name, $taxonomies );
 	}
 	if ( $args['has_default_singular_name'] ) {
-		$inst->tax_with_def_sn = array_merge( $inst->tax_with_def_sn, $taxonomies );
+		$inst->taxonomies_default_singular_name = array_merge( $inst->taxonomies_default_singular_name, $taxonomies );
 	}
 	if ( $args['has_description'] ) {
-		$inst->tax_with_desc = array_merge( $inst->tax_with_desc, $taxonomies );
+		$inst->taxonomies_description = array_merge( $inst->taxonomies_description, $taxonomies );
 	}
-}
-
-
-// -----------------------------------------------------------------------------
-
-
-/**
- * The.
- *
- * @param \WP_Term $term     The.
- * @param bool     $singular The.
- * @param string   $lang     The.
- * @return string The.
- */
-function get_term_name( $term, $singular = false, $lang = false ) {
-	$inst = _get_instance();
-	if ( false === $lang ) {
-		$lang = $this->_core->get_site_lang();
-	}
-	if ( $lang === $this->_core->get_default_site_lang() ) {
-		$ret = $term->name;
-		if ( $singular ) {
-			$sn = get_term_meta( $term->term_id, $inst->key_pre_singular_name . $lang, true );
-			if ( ! empty( $sn ) ) {
-				$ret = $sn;
-			}
-		}
-		return $ret;
-	}
-	$name = get_term_meta( $term->term_id, $inst->key_pre_name . $lang, true );
-	$sn   = get_term_meta( $term->term_id, $inst->key_pre_singular_name . $lang, true );
-
-	if ( empty( $name ) && empty( $sn ) ) {
-		return $term->name;
-	}
-	if ( $singular ) {
-		return empty( $sn ) ? $name : $sn;
-	}
-	return empty( $name ) ? $sn : $name;
-}
-
-/**
- * The.
- *
- * @param int    $term_id  The.
- * @param string $lang     The.
- * @return string The.
- */
-function term_description( $term_id = 0, $lang = false ) {
-	$inst = _get_instance();
-	if ( ! $term_id && ( is_tax() || is_tag() || is_category() ) ) {
-		$t = get_queried_object();
-		if ( $t ) {
-			$term_id = $t->term_id;
-		}
-	}
-	if ( false === $lang ) {
-		$lang = $this->_core->get_site_lang();
-	}
-	$d = get_term_meta( $term_id, $inst->_key_pre_description . $lang, true );
-	if ( empty( $d ) ) {
-		return \term_description( $term_id );
-	}
-	return $d;
 }
 
 
@@ -285,17 +257,180 @@ function term_description( $term_id = 0, $lang = false ) {
  *
  * @access private
  *
- * @return string The.
+ * @param WP_Term[] $terms The.
+ * @return WP_Term[] The.
  */
-/*
-function _cb_single_term_title() {
-	$term = get_queried_object();
-	if ( ! $term ) {
+function _cb_get_terms( array $terms ) {
+	$inst = _get_instance();
+	foreach ( $terms as $term ) {
+		if ( in_array( $term->taxonomy, $inst->taxonomies, true ) ) {
+			$key = _get_current_key();
+			if ( _get_default_key() !== $key ) {
+				_replace_term_name( $term, $term->taxonomy, $inst, $key );
+			}
+		}
+	}
+	return $terms;
+}
+
+/**
+ * The.
+ *
+ * @access private
+ *
+ * @param WP_Term $term The.
+ * @return WP_Term The.
+ */
+function _cb_get_term( WP_Term $term ) {
+	$inst = _get_instance();
+	if ( in_array( $term->taxonomy, $inst->taxonomies, true ) ) {
+		$key = _get_current_key();
+		if ( _get_default_key() !== $key ) {
+			_replace_term_name( $term, $term->taxonomy, $inst, $key );
+		}
+	}
+	return $term;
+}
+
+/**
+ * The.
+ *
+ * @access private
+ *
+ * @param WP_Term $term     The.
+ * @param string  $taxonomy The.
+ * @param object  $inst     The.
+ * @param string  $key      The.
+ */
+function _replace_term_name( WP_Term $term, string $taxonomy, object $inst, string $key ) {
+	if ( isset( $term->orig_name ) ) {
 		return;
 	}
-	return get_term_name( $term );
+	$name = get_term_meta( $term_id, $inst->key_pre_name . $key, true );
+	if ( in_array( $taxonomy, $inst->taxonomies_singular_name, true ) ) {
+		$sn = get_term_meta( $term_id, $inst->key_pre_singular_name . $key, true );
+	}
+	$ret = empty( $name ) ? $sn : $name;
+	if ( ! empty( $ret ) ) {
+		$term->orig_name = $term->name;
+		$term->name      = $ret;
+	}
 }
-*/
+
+/**
+ * The.
+ *
+ * @param int   $term_id  The.
+ * @param bool  $singular The.
+ * @param array $args     The.
+ * @return string The.
+ */
+function get_term_name( int $term_id, bool $singular = false, $args = null ) {
+	$inst = _get_instance();
+	$key  = _get_argument_key();
+	$ret  = '';
+
+	if ( _get_default_key() === $key ) {
+		if ( $singular ) {
+			$sn = get_term_meta( $term_id, $inst->key_pre_singular_name . $key, true );
+			if ( ! empty( $sn ) ) {
+				$ret = $sn;
+			}
+		}
+	} else {
+		$name = get_term_meta( $term_id, $inst->key_pre_name . $key, true );
+		$sn   = get_term_meta( $term_id, $inst->key_pre_singular_name . $key, true );
+
+		if ( $singular ) {
+			$ret = empty( $sn ) ? $name : $sn;
+		} else {
+			$ret = empty( $name ) ? $sn : $name;
+		}
+	}
+	return empty( $ret ) ? _get_term_field( $term_id, 'name' ) : $ret;
+}
+
+
+// -----------------------------------------------------------------------------
+
+
+/**
+ * The.
+ *
+ * @access private
+ *
+ * @param mixed  $value    The.
+ * @param int    $term_id  The.
+ * @param string $taxonomy The.
+ * @param string $context  The.
+ * @return mixed The.
+ */
+function _cb_term_description( $value, int $term_id, string $taxonomy, string $context ) {
+	if ( 'display' !== $context ) {
+		return $value;
+	}
+	$inst = _get_instance();
+	if ( ! in_array( $taxonomy, $inst->taxonomies_description, true ) ) {
+		return $value;
+	}
+	$key = _get_current_key();
+	$ret = '';
+
+	if ( _get_default_key() !== $key ) {
+		$ret = get_term_meta( $term_id, $inst->_key_pre_description . $key, true );
+	}
+	if ( empty( $ret ) ) {
+		$ret = $value;
+	}
+	return $ret;
+}
+
+/**
+ * The.
+ *
+ * @param int   $term_id The.
+ * @param array $args    The.
+ * @return string The.
+ */
+function term_description( int $term_id = 0, $args = null ) {
+	if ( ! $term_id && ( is_tax() || is_tag() || is_category() ) ) {
+		$t = get_queried_object();
+		if ( $t ) {
+			$term_id = $t->term_id;
+		}
+	}
+	$inst = _get_instance();
+	$key  = _get_argument_key();
+	$ret  = '';
+
+	if ( _get_default_key() !== $key ) {
+		$ret = get_term_meta( $term_id, $inst->_key_pre_description . $key, true );
+	}
+	if ( empty( $ret ) ) {
+		$ret = _get_term_field( $term_id, 'description' );
+	}
+	return $ret;
+}
+
+/**
+ * The.
+ *
+ * @access private
+ *
+ * @param int    $term_id The.
+ * @param string $field   The.
+ */
+function _get_term_field( int $term_id, string $field ) {
+	$term = WP_Term::get_instance( $term_id );
+	if ( is_wp_error( $term ) || ! is_object( $term ) || ! isset( $term->$field ) ) {
+		return '';
+	}
+	return $term->$field;
+}
+
+
+// -----------------------------------------------------------------------------
+
 
 /**
  * The.
@@ -312,13 +447,13 @@ function _cb_taxonomy_edit_form_fields( $term, $taxonomy ) {
 
 	$lab_base_n = esc_html_x( 'Name', 'term name', 'default' );
 
-	$has_desc = in_array( $taxonomy, $inst->tax_with_desc, true );
+	$has_desc = in_array( $taxonomy, $inst->taxonomies_description, true );
 	if ( $has_desc ) {
 		$lab_base_d = esc_html__( 'Description' );
 	}
-	$has_def_sg = in_array( $taxonomy, $inst->tax_with_def_sn, true );
+	$has_def_sn = in_array( $taxonomy, $inst->taxonomies_default_singular_name, true );
 
-	if ( $has_def_sg ) {
+	if ( $has_def_sn ) {
 		$lab_pf = _get_admin_label( _get_default_slugs() );
 		$lab_n  = "$lab_base_n $lab_pf";
 
@@ -347,7 +482,7 @@ function _cb_taxonomy_edit_form_fields( $term, $taxonomy ) {
 
 		if ( $has_desc ) {
 			$lab_d  = "$lab_base_d $lab_pf";
-			$id_d   = $inst->_key_pre_description . $lang;
+			$id_d   = $inst->_key_pre_description . $key;
 			$name_d = $inst->_key_pre_description . "array[$key]";
 			$val_d  = isset( $t_meta[ $id_d ] ) ? $t_meta[ $id_d ][0] : '';
 
@@ -503,21 +638,28 @@ function _get_instance(): object {
 		 *
 		 * @var array
 		 */
-		public $tax_with_sn = array();
+		public $taxonomies = array();
 
 		/**
 		 * The.
 		 *
 		 * @var array
 		 */
-		public $tax_with_def_sn = array();
+		public $taxonomies_singular_name = array();
 
 		/**
 		 * The.
 		 *
 		 * @var array
 		 */
-		public $tax_with_desc = array();
+		public $taxonomies_default_singular_name = array();
+
+		/**
+		 * The.
+		 *
+		 * @var array
+		 */
+		public $taxonomies_description = array();
 	};
 	return $values;
 }
