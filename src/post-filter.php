@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-12
+ * @version 2021-03-14
  */
 
 namespace wpinc\plex\post_filter;
@@ -42,16 +42,14 @@ function add_filter_taxonomy( string $tax, string $label, ?string $var = null ) 
  * @param array|string $post_type_s Post types or a post type.
  */
 function add_filtered_post_type( $post_type_s ) {
-	if ( ! is_array( $post_type_s ) ) {
-		$post_type_s = array( $post_type_s );
-	}
+	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
-	foreach ( $post_type_s as $pt ) {
+	foreach ( $pts as $pt ) {
 		foreach ( $inst->var_to_taxonomy as $tax ) {
 			register_taxonomy_for_object_type( $tax, $pt );
 		}
 	}
-	$inst->post_types = array_merge( $inst->post_types, $post_type_s );
+	$inst->post_types = array_merge( $inst->post_types, $pts );
 }
 
 /**
@@ -143,20 +141,16 @@ function _get_term_taxonomy_ids(): array {
 	if ( $ret ) {
 		return $ret;
 	}
-	$ret = array();
-
+	$ret  = array();
 	$inst = _get_instance();
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var' );
+	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', array_keys( $inst->var_to_taxonomy ) );
+
 	foreach ( $vars as $var ) {
-		if ( ! isset( $inst->var_to_taxonomy[ $var ] ) ) {
-			continue;
-		}
 		$tax  = $inst->var_to_taxonomy[ $var ];
 		$term = get_term_by( 'slug', get_query_var( $tax ), $tax );
-		if ( false === $term ) {
-			continue;
+		if ( $term ) {
+			$ret[] = $term->term_taxonomy_id;
 		}
-		$ret[] = $term->term_taxonomy_id;
 	}
 	return $ret;
 }
@@ -378,25 +372,23 @@ function _cb_filter_by_taxonomy( array $vars, ?\WP_Post $post = null ): array {
 	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
 		return $vars;
 	}
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var' );
+	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', array_keys( $inst->var_to_taxonomy ) );
+
 	foreach ( $vars as $var ) {
-		if ( ! isset( $inst->var_to_taxonomy[ $var ] ) ) {
-			continue;
-		}
-		$tax = $inst->var_to_taxonomy[ $var ];
-		$ts  = get_the_terms( $post->ID, $tax );
-		if ( ! is_array( $ts ) ) {
+		$terms = get_the_terms( $post->ID, $inst->var_to_taxonomy[ $var ] );
+		if ( ! is_array( $terms ) ) {
 			return $vars;
 		}
-		$term_slug = get_query_var( $tax );
-		$slugs     = array_map(
+		$term_slugs = array_map(
 			function ( $t ) {
 				return $t->slug;
 			},
-			$ts
+			$terms
 		);
-		if ( in_array( $term_slug, $slugs, true ) ) {
-			$vars[ $tax ] = $term_slug;
+
+		$slug = get_query_var( $var );
+		if ( in_array( $slug, $term_slugs, true ) ) {
+			$vars[ $var ] = $slug;
 		}
 	}
 	return $vars;
@@ -420,15 +412,15 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	if ( empty( $inst->filtered_taxonomies ) ) {
 		return;
 	}
-	$taxes       = array();
-	$slugs_array = array();
-	foreach ( \wpinc\plex\custom_rewrite\get_structures() as $st ) {
-		if ( ! isset( $inst->var_to_taxonomy[ $st['var'] ] ) ) {
-			continue;
-		}
-		$taxes[]       = $inst->var_to_taxonomy[ $st['var'] ];
-		$slugs_array[] = $st['slugs'];
-	}
+	$structs = \wpinc\plex\custom_rewrite\get_structures( null, array_keys( $inst->var_to_taxonomy ) );
+	$slugs_a = array_column( $structs, 'slugs' );
+	$taxes   = array_map(
+		function ( $st ) use ( $inst ) {
+			return $inst->var_to_taxonomy[ $st['var'] ];
+		},
+		$structs
+	);
+
 	$is_filtered = in_array( $taxonomy, $inst->filtered_taxonomies, true );
 	if ( ! $is_filtered && ! in_array( $taxonomy, $taxes, true ) ) {
 		return;
@@ -439,32 +431,34 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 		$tars = get_terms( $inst->filtered_taxonomies, array( 'hide_empty' => false ) );
 	}
 	$pts       = "('" . implode( "', '", $inst->post_types ) . "')";
-	$slug_comb = \wpinc\plex\generate_combination( $slugs_array );
+	$slug_comb = \wpinc\plex\generate_combination( $slugs_a );
 
 	global $wpdb;
 	foreach ( $tars as $tar ) {
+		$tt_id   = $tar->term_taxonomy_id;
+		$term_id = $tar->term_id;
+
 		foreach ( $slug_comb as $slugs ) {
 			$tts = array();
 			foreach ( $taxes as $idx => $tax ) {
 				$t = get_term_by( 'slug', $slugs[ $idx ], $tax );
-				if ( false === $t ) {
-					continue;
+				if ( $t ) {
+					$tts[] = $t->term_taxonomy_id;
 				}
-				$tts[] = $t->term_taxonomy_id;
 			}
 			$count = 0;
 			if ( ! empty( $tts ) ) {
 				$q  = 'SELECT COUNT(*) FROM wp_posts AS p';
 				$q .= " INNER JOIN $wpdb->term_relationships AS tr ON (p.ID = tr.object_id)";
 				$q .= _build_join_term_relationships( count( $tts ) );
-				$q .= $wpdb->prepare( " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN %s AND tr.term_taxonomy_id = %d", $pts, $tar->term_taxonomy_id );
+				$q .= $wpdb->prepare( " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN %s AND tr.term_taxonomy_id = %d", $pts, $tt_id );
 				$q .= ' AND ' . _build_where_term_relationships( $tts );
 				// phpcs:disable
 				$count = (int) $wpdb->get_var( $q );
 				// phpcs:enable
 			}
 			$tmk = 'count_' . str_replace( '-', '_', implode( '_', $slugs ) );
-			update_term_meta( $tar->term_id, $tmk, $count );
+			update_term_meta( $term_id, $tmk, $count );
 		}
 	}
 }

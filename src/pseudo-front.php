@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-10
+ * @version 2021-03-14
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -21,9 +21,8 @@ const ADMIN_QUERY_VAR = 'pseudo_front';
  */
 function register_admin_labels( array $slug_to_label ) {
 	$inst = _get_instance();
-	foreach ( $slug_to_label as $slug => $label ) {
-		$inst->slug_to_label[ $slug ] = $label;
-	}
+
+	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
 }
 
 /**
@@ -108,7 +107,8 @@ function home_url( string $path = '', ?string $scheme = null, array $vars = arra
 function get_slug_combination(): array {
 	static $ret = null;
 	if ( null === $ret ) {
-		$ret = \wpinc\plex\generate_combination( \wpinc\plex\custom_rewrite\get_structures( 'slugs' ) );
+		$slugs_a = \wpinc\plex\custom_rewrite\get_structures( 'slugs' );
+		$ret     = \wpinc\plex\generate_combination( $slugs_a );
 	}
 	return $ret;
 }
@@ -121,14 +121,13 @@ function get_slug_combination(): array {
  * @return string The key string.
  */
 function _get_key(): string {
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var' );
-	$vals = array_map(
-		function ( $e ) {
-			return \wpinc\plex\custom_rewrite\get_query_var( $e );
+	$slugs = array_map(
+		function ( $v ) {
+			return \wpinc\plex\custom_rewrite\get_query_var( $v );
 		},
-		$vars
+		\wpinc\plex\custom_rewrite\get_structures( 'var' )
 	);
-	return implode( '_', $vals );
+	return implode( '_', $slugs );
 }
 
 /**
@@ -153,11 +152,12 @@ function _get_default_key(): string {
  */
 function _get_admin_label( array $slugs ): string {
 	$inst = _get_instance();
-
-	$ls = array();
-	foreach ( $slugs as $s ) {
-		$ls[] = $inst->slug_to_label[ $s ] ?? $s;
-	}
+	$ls   = array_map(
+		function ( $s ) use ( $inst ) {
+			return $inst->slug_to_label[ $s ] ?? $s;
+		},
+		$slugs
+	);
 	if ( $inst->label_format ) {
 		return sprintf( $inst->label_format, ...$ls );
 	}
@@ -276,18 +276,15 @@ function _cb_admin_init() {
 		if ( $key === $skip_key ) {
 			continue;
 		}
-		$title = esc_html( _get_admin_label( $slugs ) );
-
 		$key_bn = "blogname_$key";
 		$key_bd = "blogdescription_$key";
 		register_setting( 'general', $key_bn );
 		register_setting( 'general', $key_bd );
 
-		$title_bn = __( 'Site Title' ) . "<br>$title";
-		$title_bd = __( 'Tagline' ) . "<br>$title";
+		$title = esc_html( _get_admin_label( $slugs ) );
 		add_settings_field(
 			$key_bn,
-			$title_bn,
+			__( 'Site Title' ) . "<br>$title",
 			function () use ( $key_bn ) {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_bn );
 			},
@@ -296,7 +293,7 @@ function _cb_admin_init() {
 		);
 		add_settings_field(
 			$key_bd,
-			$title_bd,
+			__( 'Tagline' ) . "<br>$title",
 			function () use ( $key_bd ) {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_bd );
 			},
@@ -342,14 +339,13 @@ function _cb_query_vars( array $public_query_vars ): array {
 function _cb_admin_menu() {
 	foreach ( get_slug_combination() as $slugs ) {
 		$page = get_page_by_path( implode( '/', $slugs ) );
-		if ( null === $page ) {
-			continue;
-		}
-		$key   = implode( '_', $slugs );
-		$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( _get_admin_label( $slugs ) );
+		if ( $page ) {
+			$key   = implode( '_', $slugs );
+			$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( _get_admin_label( $slugs ) );
 
-		$slug = add_query_arg( ADMIN_QUERY_VAR, $page->ID, 'edit.php?post_type=page' );
-		add_pages_page( '', $title, 'edit_pages', $slug );
+			$slug = add_query_arg( ADMIN_QUERY_VAR, $page->ID, 'edit.php?post_type=page' );
+			add_pages_page( '', $title, 'edit_pages', $slug );
+		}
 	}
 }
 
@@ -386,10 +382,12 @@ function _cb_parse_query( \WP_Query $query ) {
 		'post_status' => 'publish,future,draft,pending,private',
 	);
 
-	$ps = get_pages( $args );
-	foreach ( $ps as $p ) {
-		$ids[] = $p->ID;
-	}
+	$ids = array_map(
+		function ( $p ) {
+			return $p->ID;
+		},
+		get_pages( $args )
+	);
 	$query->set( 'post__in', $ids );
 	$query->set( 'orderby', 'post__in' );
 }

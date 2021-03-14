@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-12
+ * @version 2021-03-14
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -85,14 +85,24 @@ function initialize() {
  * Retrieve rewrite structures.
  *
  * @param ?string $field (Optional) Field of rewrite structure args.
+ * @param ?array  $vars  (Optional) Variable names for filtering.
  * @return mixed|array Rewrite structures.
  */
-function get_structures( ?string $field = null ) {
-	$inst = _get_instance();
-	if ( $field ) {
-		return array_column( $inst->structures, $field );
+function get_structures( ?string $field = null, ?array $vars = null ) {
+	$structs = _get_instance()->structures;
+	if ( $vars ) {
+		$structs = array_filter(
+			$structs,
+			function ( $st ) use ( $vars ) {
+				return in_array( $st['var'], $vars, true );
+			}
+		);
+		$structs = array_values( $structs );
 	}
-	return $inst->structures;
+	if ( $field ) {
+		return array_column( $structs, $field );
+	}
+	return $structs;
 }
 
 /**
@@ -127,10 +137,7 @@ function build_full_path( array $vars = array() ): string {
 
 	$vars += $inst->vars;
 	foreach ( $inst->structures as $st ) {
-		$v = $vars[ $st['var'] ] ?? '';
-		if ( ! $v ) {
-			$v = $st['default_slug'];
-		}
+		$v    = empty( $vars[ $st['var'] ] ) ? $st['default_slug'] : $vars[ $st['var'] ];
 		$ps[] = $v;
 	}
 	return implode( '/', $ps );
@@ -148,14 +155,10 @@ function build_norm_path( array $vars = array() ): string {
 
 	$vars += $inst->vars;
 	foreach ( $inst->structures as $st ) {
-		$v = $vars[ $st['var'] ];
-		if ( $st['is_omittable'] && $v === $st['default_slug'] ) {
-			continue;
+		$v = empty( $vars[ $st['var'] ] ) ? $st['default_slug'] : $vars[ $st['var'] ];
+		if ( ! $st['is_omittable'] || $v !== $st['default_slug'] ) {
+			$ps[] = $v;
 		}
-		if ( ! $v ) {
-			$v = $st['default_slug'];
-		}
-		$ps[] = $v;
 	}
 	return implode( '/', $ps );
 }
@@ -337,11 +340,7 @@ function _extract_vars( string $url ): array {
 
 			$p = array_shift( $ps );
 		} else {
-			if ( $st['is_omittable'] ) {
-				$vars[ $st['var'] ] = $st['default_slug'];
-			} else {
-				$vars[ $st['var'] ] = null;
-			}
+			$vars[ $st['var'] ] = $st['is_omittable'] ? $st['default_slug'] : null;
 		}
 	}
 	return array( $vars, implode( '/', $sps ) );
@@ -413,10 +412,7 @@ function _cb_after_setup_theme() {
  */
 function _cb_query_vars( array $public_query_vars ): array {
 	$inst = _get_instance();
-	foreach ( $inst->structures as $st ) {
-		$public_query_vars[] = $st['var'];
-	}
-	return $public_query_vars;
+	return array_merge( $public_query_vars, array_column( $inst->structure, 'var' ) );
 }
 
 /**
@@ -432,10 +428,7 @@ function _cb_request( array $query_vars ): array {
 	if ( $inst->is_page_not_found ) {
 		$query_vars['error'] = '404';
 	}
-	foreach ( $inst->vars as $key => $val ) {
-		$query_vars[ $key ] = $val;
-	}
-	return $query_vars;
+	return array_merge( $query_vars, $inst->vars );
 }
 
 /**

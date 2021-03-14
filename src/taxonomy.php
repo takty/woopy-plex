@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-12
+ * @version 2021-03-14
  */
 
 namespace wpinc\plex\taxonomy;
@@ -52,9 +52,8 @@ function initialize( $args = array() ) {
  */
 function register_admin_labels( array $slug_to_label ) {
 	$inst = _get_instance();
-	foreach ( $slug_to_label as $slug => $label ) {
-		$inst->slug_to_label[ $slug ] = $label;
-	}
+
+	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
 }
 
 /**
@@ -64,6 +63,53 @@ function register_admin_labels( array $slug_to_label ) {
  */
 function set_admin_label_format( string $format ) {
 	_get_instance()->label_format = $format;
+}
+
+
+// -----------------------------------------------------------------------------
+
+
+/**
+ * Generate slug combinations.
+ *
+ * @return array The array of slug combinations.
+ */
+function get_slug_combination(): array {
+	static $ret = null;
+	if ( null === $ret ) {
+		$slugs_a = \wpinc\plex\custom_rewrite\get_structures( 'slugs', _get_instance()->vars );
+		$ret     = \wpinc\plex\generate_combination( $slugs_a );
+	}
+	return $ret;
+}
+
+/**
+ * Retrieve the key of current query variables.
+ *
+ * @access private
+ *
+ * @return string The key string.
+ */
+function _get_key(): string {
+	$slugs = array_map(
+		function ( $v ) {
+			return get_query_var( $v );
+		},
+		_get_instance()->vars
+	);
+	return implode( '_', $slugs );
+}
+
+/**
+ * Retrieve the key of default query variables.
+ *
+ * @access private
+ *
+ * @return string The key string.
+ */
+function _get_default_key(): string {
+	$slugs = \wpinc\plex\custom_rewrite\get_structures( 'default_slug', _get_instance()->vars );
+	return implode( '_', $slugs );
 }
 
 /**
@@ -76,91 +122,21 @@ function set_admin_label_format( string $format ) {
  */
 function _get_admin_label( array $slugs ): string {
 	$inst = _get_instance();
-
-	$ls = array();
-	foreach ( $slugs as $s ) {
-		$ls[] = $inst->slug_to_label[ $s ] ?? $s;
-	}
+	$ls   = array_map(
+		function ( $s ) use ( $inst ) {
+			return $inst->slug_to_label[ $s ] ?? $s;
+		},
+		$slugs
+	);
 	if ( $inst->label_format ) {
 		return sprintf( $inst->label_format, ...$ls );
 	}
 	return implode( ' ', $ls );
 }
 
-/**
- * Generate slug combinations.
- *
- * @return array The array of slug combinations.
- */
-function get_slug_combination(): array {
-	static $ret = null;
-	if ( null === $ret ) {
-		$inst        = _get_instance();
-		$structs     = \wpinc\plex\custom_rewrite\get_structures();
-		$slugs_array = array();
-
-		foreach ( $structs as $struct ) {
-			if ( in_array( $struct['var'], $inst->vars, true ) ) {
-				$slugs_array[] = $struct['slugs'];
-			}
-		}
-		$ret = \wpinc\plex\generate_combination( $slugs_array );
-	}
-	return $ret;
-}
-
 
 // -----------------------------------------------------------------------------
 
-
-/**
- * Retrieve the key of default query variables.
- *
- * @access private
- *
- * @return string The key string.
- */
-function _get_default_key(): string {
-	return implode( '_', _get_default_slugs() );
-}
-
-/**
- * Retrieve.
- *
- * @access private
- *
- * @return string The key string.
- */
-function _get_current_key(): string {
-	$inst  = _get_instance();
-	$slugs = array();
-
-	foreach ( $inst->vars as $var ) {
-		$val     = get_query_var( $var );
-		$slugs[] = $v;
-	}
-	return implode( '_', $slugs );
-}
-
-/**
- * Retrieve.
- *
- * @access private
- *
- * @return string The key string.
- */
-function _get_default_slugs(): array {
-	$inst    = _get_instance();
-	$structs = \wpinc\plex\custom_rewrite\get_structures();
-	$slugs   = array();
-
-	foreach ( $structs as $struct ) {
-		if ( in_array( $struct['var'], $inst->vars, true ) ) {
-			$slugs[] = $struct['default_slug'];
-		}
-	}
-	return $slugs;
-}
 
 /**
  * Retrieve.
@@ -176,7 +152,7 @@ function _get_argument_key( $args ): string {
 	} elseif ( is_string( $args ) && ! empty( $args ) ) {
 		$key = $args;
 	} else {
-		$key = _get_current_key();
+		$key = _get_key();
 	}
 	return $key;
 }
@@ -190,19 +166,12 @@ function _get_argument_key( $args ): string {
  * @return string The key string.
  */
 function _make_key_from_argument( array $args ): string {
-	$inst    = _get_instance();
-	$structs = \wpinc\plex\custom_rewrite\get_structures();
-	$slugs   = array();
-
-	foreach ( $structs as $struct ) {
-		if ( in_array( $struct['var'], $inst->vars, true ) ) {
-			if ( isset( $args[ $struct['var'] ] ) ) {
-				$slugs[] = $args[ $struct['var'] ];
-			} else {
-				$slugs[] = $struct['default_slug'];
-			}
-		}
-	}
+	$slugs = array_map(
+		function ( $st ) use ( $args ) {
+			return isset( $args[ $st['var'] ] ) ? $args[ $st['var'] ] : $st['default_slug'];
+		},
+		\wpinc\plex\custom_rewrite\get_structures( null, _get_instance()->vars )
+	);
 	return implode( '_', $slugs );
 }
 
@@ -262,11 +231,12 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
  */
 function _cb_get_terms( array $terms ) {
 	$inst = _get_instance();
-	foreach ( $terms as $term ) {
-		if ( in_array( $term->taxonomy, $inst->taxonomies, true ) ) {
-			$key = _get_current_key();
-			if ( _get_default_key() !== $key ) {
-				_replace_term_name( $term, $term->taxonomy, $inst, $key );
+	$key  = _get_key();
+
+	if ( _get_default_key() !== $key ) {
+		foreach ( $terms as $t ) {
+			if ( in_array( $t->taxonomy, $inst->taxonomies, true ) ) {
+				_replace_term_name( $t, $t->taxonomy, $inst, $key );
 			}
 		}
 	}
@@ -283,9 +253,10 @@ function _cb_get_terms( array $terms ) {
  */
 function _cb_get_term( WP_Term $term ) {
 	$inst = _get_instance();
-	if ( in_array( $term->taxonomy, $inst->taxonomies, true ) ) {
-		$key = _get_current_key();
-		if ( _get_default_key() !== $key ) {
+	$key  = _get_key();
+
+	if ( _get_default_key() !== $key ) {
+		if ( in_array( $term->taxonomy, $inst->taxonomies, true ) ) {
 			_replace_term_name( $term, $term->taxonomy, $inst, $key );
 		}
 	}
@@ -373,7 +344,7 @@ function _cb_term_description( $value, int $term_id, string $taxonomy, string $c
 	if ( ! in_array( $taxonomy, $inst->taxonomies_description, true ) ) {
 		return $value;
 	}
-	$key = _get_current_key();
+	$key = _get_key();
 	$ret = '';
 
 	if ( _get_default_key() !== $key ) {
@@ -445,6 +416,8 @@ function _cb_taxonomy_edit_form_fields( $term, $taxonomy ) {
 	$def_key = _get_default_key();
 	$t_meta  = get_term_meta( $term->term_id );
 
+	$def_slugs = \wpinc\plex\custom_rewrite\get_structures( 'default_slug', $inst->vars );
+
 	$lab_base_n = esc_html_x( 'Name', 'term name', 'default' );
 
 	$has_desc = in_array( $taxonomy, $inst->taxonomies_description, true );
@@ -454,7 +427,7 @@ function _cb_taxonomy_edit_form_fields( $term, $taxonomy ) {
 	$has_def_sn = in_array( $taxonomy, $inst->taxonomies_default_singular_name, true );
 
 	if ( $has_def_sn ) {
-		$lab_pf = _get_admin_label( _get_default_slugs() );
+		$lab_pf = _get_admin_label( $def_slugs );
 		$lab_n  = "$lab_base_n $lab_pf";
 
 		$id_sn   = $inst->key_pre_singular_name . $def_key;

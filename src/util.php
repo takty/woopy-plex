@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-12
+ * @version 2021-03-14
  */
 
 namespace wpinc\plex;
@@ -23,7 +23,7 @@ function generate_combination( array $arrays ): array {
 
 	$c = $total;
 	foreach ( $arrays as $k => $vs ) {
-		$c = $c / $counts[ $k ];
+		$c /= $counts[ $k ];
 
 		$cycles[ $k ] = $c;
 	}
