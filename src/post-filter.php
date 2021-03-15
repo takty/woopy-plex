@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-14
+ * @version 2021-03-15
  */
 
 namespace wpinc\plex\post_filter;
@@ -14,12 +14,12 @@ require_once __DIR__ . '/util.php';
 /**
  * Register taxonomy used for filtering.
  *
- * @param string  $tax   The taxonomy used for filtering.
- * @param string  $label The label of the taxonomy.
- * @param ?string $var   (Optional) The query variable name related to the taxonomy.
+ * @param string  $taxonomy The taxonomy used for filtering.
+ * @param string  $label    The label of the taxonomy.
+ * @param ?string $var      (Optional) The query variable name related to the taxonomy.
  */
-function add_filter_taxonomy( string $tax, string $label, ?string $var = null ) {
-	$var  = $var ?? $tax;
+function add_filter_taxonomy( string $taxonomy, string $label, ?string $var = null ) {
+	$var  = $var ?? $taxonomy;
 	$args = array(
 		'label'             => $label,
 		'show_in_nav_menus' => false,
@@ -28,18 +28,18 @@ function add_filter_taxonomy( string $tax, string $label, ?string $var = null ) 
 		'query_var'         => false,
 		'rewrite'           => false,
 	);
-	register_taxonomy( $tax, null, $args );
+	register_taxonomy( $taxonomy, null, $args );
 	$inst = _get_instance();
 	foreach ( $inst->post_types as $pt ) {
-		register_taxonomy_for_object_type( $tax, $pt );
+		register_taxonomy_for_object_type( $taxonomy, $pt );
 	}
-	$inst->var_to_taxonomy[ $var ] = $tax;
+	$inst->var_to_taxonomy[ $var ] = $taxonomy;
 }
 
 /**
  * Add filtered post types.
  *
- * @param array|string $post_type_s Post types or a post type.
+ * @param array|string $post_type_s A post type or an array of post types.
  */
 function add_filtered_post_type( $post_type_s ) {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
@@ -55,14 +55,13 @@ function add_filtered_post_type( $post_type_s ) {
 /**
  * Add filtered taxonomies.
  *
- * @param array|string $tax_s Taxonomies or a taxonomy.
+ * @param array|string $taxonomy_s A taxonomy or an array of taxonomies.
  */
-function add_filtered_taxonomy( $tax_s ) {
+function add_filtered_taxonomy( $taxonomy_s ) {
+	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
 	$inst = _get_instance();
-	if ( ! is_array( $tax_s ) ) {
-		$tax_s = array( $tax_s );
-	}
-	$inst->filtered_taxonomies = array_merge( $inst->filtered_taxonomies, $tax_s );
+
+	$inst->filtered_taxonomies = array_merge( $inst->filtered_taxonomies, $txs );
 }
 
 /**
@@ -98,15 +97,16 @@ function initialize() {
  * @access private
  * @global $wpdb;
  *
- * @param int    $count The number of joined tables.
- * @param string $type  The operation type.
+ * @param int    $count    The number of joined tables.
+ * @param string $wp_posts Table name of wp_posts.
+ * @param string $type     Operation type.
  * @return string The JOIN clause.
  */
-function _build_join_term_relationships( int $count, string $type = 'INNER' ): string {
+function _build_join_term_relationships( int $count, string $wp_posts, string $type = 'INNER' ): string {
 	global $wpdb;
 	$q = array();
 	for ( $i = 0; $i < $count; ++$i ) {
-		$q[] = " $type JOIN {$wpdb->term_relationships} AS tr$i ON (p.ID = tr$i.object_id)";
+		$q[] = " $type JOIN {$wpdb->term_relationships} AS tr$i ON ($wp_posts.ID = tr$i.object_id)";
 	}
 	return implode( '', $q );
 }
@@ -178,7 +178,7 @@ function _cb_get_adjacent_post_join( string $join, bool $in_same_term, $excluded
 	}
 	$tts = _get_term_taxonomy_ids();
 	if ( ! empty( $tts ) ) {
-		$join .= _build_join_term_relationships( count( $tts ) );
+		$join .= _build_join_term_relationships( count( $tts ), 'p' );
 	}
 	return $join;
 }
@@ -230,7 +230,7 @@ function _cb_getarchives_join( string $sql_join, array $parsed_args ): string {
 	}
 	$tts = _get_term_taxonomy_ids();
 	if ( ! empty( $tts ) ) {
-		$sql_join .= _build_join_term_relationships( count( $tts ) );
+		$sql_join .= _build_join_term_relationships( count( $tts ), 'wp_posts' );
 	}
 	return $sql_join;
 }
@@ -284,9 +284,9 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 	}
 	global $wpdb;
 	if ( in_array( $query->query_vars['post_type'], $inst->post_types, true ) ) {
-		$join .= _build_join_term_relationships( count( $tts ) );
+		$join .= _build_join_term_relationships( count( $tts ), 'wp_posts' );
 	} elseif ( is_search() ) {
-		$join .= _build_join_term_relationships( count( $tts ), 'LEFT' );
+		$join .= _build_join_term_relationships( count( $tts ), 'wp_posts', 'LEFT' );
 	}
 	return $join;
 }
@@ -412,13 +412,11 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	if ( empty( $inst->filtered_taxonomies ) ) {
 		return;
 	}
-	$structs = \wpinc\plex\custom_rewrite\get_structures( null, array_keys( $inst->var_to_taxonomy ) );
-	$slugs_a = array_column( $structs, 'slugs' );
-	$taxes   = array_map(
+	$taxes = array_map(
 		function ( $st ) use ( $inst ) {
 			return $inst->var_to_taxonomy[ $st['var'] ];
 		},
-		$structs
+		\wpinc\plex\custom_rewrite\get_structures( null, array_keys( $inst->var_to_taxonomy ) )
 	);
 
 	$is_filtered = in_array( $taxonomy, $inst->filtered_taxonomies, true );
@@ -431,7 +429,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 		$tars = get_terms( $inst->filtered_taxonomies, array( 'hide_empty' => false ) );
 	}
 	$pts       = "('" . implode( "', '", $inst->post_types ) . "')";
-	$slug_comb = \wpinc\plex\generate_combination( $slugs_a );
+	$slug_comb = \wpinc\plex\get_slug_combination();
 
 	global $wpdb;
 	foreach ( $tars as $tar ) {
@@ -450,7 +448,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 			if ( ! empty( $tts ) ) {
 				$q  = 'SELECT COUNT(*) FROM wp_posts AS p';
 				$q .= " INNER JOIN $wpdb->term_relationships AS tr ON (p.ID = tr.object_id)";
-				$q .= _build_join_term_relationships( count( $tts ) );
+				$q .= _build_join_term_relationships( count( $tts ), 'p' );
 				$q .= $wpdb->prepare( " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN %s AND tr.term_taxonomy_id = %d", $pts, $tt_id );
 				$q .= ' AND ' . _build_where_term_relationships( $tts );
 				// phpcs:disable
