@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-14
+ * @version 2021-03-15
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -15,11 +15,11 @@ require_once __DIR__ . '/util.php';
 const ADMIN_QUERY_VAR = 'pseudo_front';
 
 /**
- * Register an array of slug to label.
+ * Add an array of slug to label.
  *
  * @param array $slug_to_label An array of slug to label.
  */
-function register_admin_labels( array $slug_to_label ) {
+function add_admin_labels( array $slug_to_label ) {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
@@ -42,7 +42,7 @@ function set_admin_label_format( string $format ) {
 function set_default_front_bloginfo_enabled( bool $flag ) {
 	_get_instance()->is_default_front_bloginfo_enabled = $flag;
 	if ( false === $flag ) {
-		$key = _get_default_key();
+		$key = \wpinc\plex\get_default_key();
 		delete_option( "blogname_$key" );
 		delete_option( "blogdescription_$key" );
 	}
@@ -98,49 +98,6 @@ function home_url( string $path = '', ?string $scheme = null, array $vars = arra
 
 // -----------------------------------------------------------------------------
 
-
-/**
- * Generate slug combinations.
- *
- * @return array The array of slug combinations.
- */
-function get_slug_combination(): array {
-	static $ret = null;
-	if ( null === $ret ) {
-		$slugs_a = \wpinc\plex\custom_rewrite\get_structures( 'slugs' );
-		$ret     = \wpinc\plex\generate_combination( $slugs_a );
-	}
-	return $ret;
-}
-
-/**
- * Retrieve the key of current query variables.
- *
- * @access private
- *
- * @return string The key string.
- */
-function _get_key(): string {
-	$slugs = array_map(
-		function ( $v ) {
-			return \wpinc\plex\custom_rewrite\get_query_var( $v );
-		},
-		\wpinc\plex\custom_rewrite\get_structures( 'var' )
-	);
-	return implode( '_', $slugs );
-}
-
-/**
- * Retrieve the key of default query variables.
- *
- * @access private
- *
- * @return string The key string.
- */
-function _get_default_key(): string {
-	$slugs = \wpinc\plex\custom_rewrite\get_structures( 'default_slug' );
-	return implode( '_', $slugs );
-}
 
 /**
  * Retrieve the label of current query variables.
@@ -215,7 +172,7 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
  * @return string The filtered string.
  */
 function _cb_option_blogname( string $value ): string {
-	$ret = get_option( 'blogname_' . _get_key() );
+	$ret = get_option( 'blogname_' . \wpinc\plex\get_query_key() );
 	if ( false === $ret ) {
 		return $value;
 	}
@@ -231,7 +188,7 @@ function _cb_option_blogname( string $value ): string {
  * @return string The filtered string.
  */
 function _cb_option_blogdescription( string $value ): string {
-	$ret = get_option( 'blogdescription_' . _get_key() );
+	$ret = get_option( 'blogdescription_' . \wpinc\plex\get_query_key() );
 	if ( false === $ret ) {
 		return $value;
 	}
@@ -267,11 +224,11 @@ function _cb_body_class( array $classes ): array {
  * @access private
  */
 function _cb_admin_init() {
-	$skip_key = _get_instance()->is_default_front_bloginfo_enabled ? '' : _get_default_key();
+	$skip_key = _get_instance()->is_default_front_bloginfo_enabled ? '' : \wpinc\plex\get_default_key();
 
 	add_settings_section( 'pseudo-front-section', __( 'Sites' ), function () {}, 'general' );
 
-	foreach ( get_slug_combination() as $slugs ) {
+	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
 		$key = implode( '_', $slugs );
 		if ( $key === $skip_key ) {
 			continue;
@@ -337,7 +294,7 @@ function _cb_query_vars( array $public_query_vars ): array {
  * @access private
  */
 function _cb_admin_menu() {
-	foreach ( get_slug_combination() as $slugs ) {
+	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
 		$page = get_page_by_path( implode( '/', $slugs ) );
 		if ( $page ) {
 			$key   = implode( '_', $slugs );
@@ -404,7 +361,7 @@ function _cb_parse_query( \WP_Query $query ) {
 function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 	unset( $post_states['page_on_front'] );
 
-	foreach ( get_slug_combination() as $slugs ) {
+	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
 		$page = get_page_by_path( implode( '/', $slugs ) );
 		if ( $page && $page->ID === $post->ID ) {
 			$post_states['page_on_front'] = _x( 'Front Page', 'page label' );
@@ -425,7 +382,7 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
  * @param \WP_Admin_Bar $wp_admin_bar WP_Admin_Bar instance, passed by reference.
  */
 function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
-	foreach ( get_slug_combination() as $slugs ) {
+	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
 		$path = implode( '/', $slugs );
 		$page = get_page_by_path( $path );
 		if ( $page ) {

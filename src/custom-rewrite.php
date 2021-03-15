@@ -4,16 +4,16 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-14
+ * @version 2021-03-15
  */
 
 namespace wpinc\plex\custom_rewrite;
 
 /**
- * Register a rewrite structure.
+ * Add a rewrite structure.
  *
  * @param array $args {
- *     Rewrite structure args.
+ *     Rewrite structure arguments.
  *
  *     @type string   $var          Name of the variable.
  *     @type string[] $slugs        An array of slugs.
@@ -23,7 +23,7 @@ namespace wpinc\plex\custom_rewrite;
  *                                  Default false.
  * }
  */
-function register_structure( array $args ) {
+function add_structure( array $args ) {
 	$args += array(
 		'var'          => '',
 		'slugs'        => array(),
@@ -113,7 +113,7 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
  * @return string Slugs of the query variable.
  */
 function get_query_var( string $var, string $default = '' ): string {
-	return _get_instance()->vars[ $var ] ?? $default;
+	return _get_instance()->vars[ $var ] ?? \get_query_var( $var, $default );
 }
 
 /**
@@ -411,8 +411,10 @@ function _cb_after_setup_theme() {
  * @return string[] The filtered array.
  */
 function _cb_query_vars( array $public_query_vars ): array {
-	$inst = _get_instance();
-	return array_merge( $public_query_vars, array_column( $inst->structure, 'var' ) );
+	return array_merge(
+		$public_query_vars,
+		array_column( _get_instance()->structures, 'var' )
+	);
 }
 
 /**
