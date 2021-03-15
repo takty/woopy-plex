@@ -9,7 +9,8 @@
 
 namespace wpinc\plex\post_filter;
 
-require_once __DIR__ . '/util.php';
+require_once __DIR__ . '/custom-rewrite.php';
+require_once __DIR__ . '/slug-key.php';
 
 /**
  * Register taxonomy used for filtering.
@@ -33,6 +34,7 @@ function add_filter_taxonomy( string $taxonomy, string $label, ?string $var = nu
 	foreach ( $inst->post_types as $pt ) {
 		register_taxonomy_for_object_type( $taxonomy, $pt );
 	}
+	$inst->vars[]                  = $taxonomy;
 	$inst->var_to_taxonomy[ $var ] = $taxonomy;
 }
 
@@ -143,7 +145,7 @@ function _get_term_taxonomy_ids(): array {
 	}
 	$ret  = array();
 	$inst = _get_instance();
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', array_keys( $inst->var_to_taxonomy ) );
+	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
 		$tax  = $inst->var_to_taxonomy[ $var ];
@@ -372,7 +374,7 @@ function _cb_filter_by_taxonomy( array $vars, ?\WP_Post $post = null ): array {
 	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
 		return $vars;
 	}
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', array_keys( $inst->var_to_taxonomy ) );
+	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
 		$terms = get_the_terms( $post->ID, $inst->var_to_taxonomy[ $var ] );
@@ -416,7 +418,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 		function ( $st ) use ( $inst ) {
 			return $inst->var_to_taxonomy[ $st['var'] ];
 		},
-		\wpinc\plex\custom_rewrite\get_structures( null, array_keys( $inst->var_to_taxonomy ) )
+		\wpinc\plex\custom_rewrite\get_structures( null, $inst->vars )
 	);
 
 	$is_filtered = in_array( $taxonomy, $inst->filtered_taxonomies, true );
@@ -478,6 +480,13 @@ function _get_instance(): object {
 		return $values;
 	}
 	$values = new class() {
+		/**
+		 * The array of variable names.
+		 *
+		 * @var array
+		 */
+		public $vars = array();
+
 		/**
 		 * The array of variable name to taxonomy.
 		 *

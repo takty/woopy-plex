@@ -1,13 +1,15 @@
 <?php
 /**
- * Utilities
+ * Utilities for Slug-Key Operations
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-14
+ * @version 2021-03-15
  */
 
 namespace wpinc\plex;
+
+require_once __DIR__ . '/custom-rewrite.php';
 
 /**
  * Retrieve the key of default query variables.

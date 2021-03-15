@@ -10,7 +10,7 @@
 namespace wpinc\plex\taxonomy;
 
 require_once __DIR__ . '/custom-rewrite.php';
-require_once __DIR__ . '/util.php';
+require_once __DIR__ . '/slug-key.php';
 
 /**
  * The.

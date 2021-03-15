@@ -10,7 +10,7 @@
 namespace wpinc\plex\pseudo_front;
 
 require_once __DIR__ . '/custom-rewrite.php';
-require_once __DIR__ . '/util.php';
+require_once __DIR__ . '/slug-key.php';
 
 const ADMIN_QUERY_VAR = 'pseudo_front';
 
