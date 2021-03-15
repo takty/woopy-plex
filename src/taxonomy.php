@@ -33,7 +33,9 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
 		'has_description'           => false,
 	);
 	foreach ( $txs as $tx ) {
-		add_filter( "get_{$tx}", '\wpinc\plex\taxonomy\_cb_get_taxonomy', 10 );
+		if ( ! is_admin() || ( is_admin() && ( 'post-new.php' === $pagenow || 'post.php' === $pagenow ) ) ) {
+			add_filter( "get_{$tx}", '\wpinc\plex\taxonomy\_cb_get_taxonomy', 10 );
+		}
 		if ( is_admin() ) {
 			add_action( "{$tx}_edit_form_fields", '\wpinc\plex\taxonomy\_cb_taxonomy_edit_form_fields', 10, 2 );
 			add_action( "edited_$tx", '\wpinc\plex\taxonomy\_cb_edited_taxonomy', 10 );
