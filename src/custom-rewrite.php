@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-15
+ * @version 2021-03-16
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -63,15 +63,14 @@ function initialize() {
 
 	if ( ! is_admin() ) {
 		add_action( 'after_setup_theme', '\wpinc\plex\custom_rewrite\_cb_after_setup_theme', 1 );
-		add_filter( 'query_vars', '\wpinc\plex\custom_rewrite\_cb_query_vars' );
 		add_filter( 'request', '\wpinc\plex\custom_rewrite\_cb_request' );
 		add_filter( 'redirect_canonical', '\wpinc\plex\custom_rewrite\_cb_redirect_canonical', 1, 2 );
 	}
-	add_filter( 'post_type_link', '\wpinc\plex\custom_rewrite\_cb_post_link', 10, 2 );
+	add_filter( 'page_link', '\wpinc\plex\custom_rewrite\_cb_page_link' );
 	add_filter( 'post_link', '\wpinc\plex\custom_rewrite\_cb_post_link', 10, 2 );
-	add_filter( 'page_link', '\wpinc\plex\custom_rewrite\_cb_link' );
+	add_filter( 'post_type_link', '\wpinc\plex\custom_rewrite\_cb_post_link', 10, 2 );
 
-	add_filter( 'post_type_archive_link', '\wpinc\plex\custom_rewrite\_cb_link' );
+	add_filter( 'post_type_archive_link', '\wpinc\plex\custom_rewrite\_cb_link', 20 );  // Caution!
 	add_filter( 'paginate_links', '\wpinc\plex\custom_rewrite\_cb_link' );
 	add_filter( 'term_link', '\wpinc\plex\custom_rewrite\_cb_link' );
 	add_filter( 'year_link', '\wpinc\plex\custom_rewrite\_cb_link' );
@@ -346,6 +345,33 @@ function _extract_vars( string $url ): array {
 	return array( $vars, implode( '/', $sps ) );
 }
 
+/**
+ * Extract query path from URL.
+ *
+ * @access private
+ *
+ * @param string $url URL.
+ * @return string The query path.
+ */
+function _extract_query_path( string $url ): string {
+	list( $path ) = explode( '?', $url );
+
+	$path = trim( str_replace( \home_url(), '', $path ), '/' );
+	$ps   = explode( '/', $path );
+	$sps  = array();
+
+	$inst = _get_instance();
+	$p    = array_shift( $ps );
+
+	foreach ( $inst->structures as $st ) {
+		if ( in_array( $p, $st['slugs'], true ) ) {
+			$sps[] = $p;
+			$p     = array_shift( $ps );
+		}
+	}
+	return implode( '/', $sps );
+}
+
 
 // -----------------------------------------------------------------------------
 
@@ -360,12 +386,11 @@ function _cb_after_setup_theme() {
 	if ( empty( $inst->structures ) ) {
 		return;
 	}
-	list( $req, $req_file ) = _parse_request();
+	list( $req, $req_file )   = _parse_request();
+	list( $inst->vars, $cur ) = _extract_vars( $req );
 	if ( empty( $req ) ) {
 		return;
 	}
-	list( $inst->vars, $cur ) = _extract_vars( $req );
-
 	$full = build_full_path( $inst->vars );
 	$norm = build_norm_path( $inst->vars );
 
@@ -403,21 +428,6 @@ function _cb_after_setup_theme() {
 }
 
 /**
- * Callback function for 'query_vars' filter.
- *
- * @access private
- *
- * @param string[] $public_query_vars The array of allowed query variable names.
- * @return string[] The filtered array.
- */
-function _cb_query_vars( array $public_query_vars ): array {
-	return array_merge(
-		$public_query_vars,
-		array_column( _get_instance()->structures, 'var' )
-	);
-}
-
-/**
  * Callback function for 'request' filter.
  *
  * @access private
@@ -426,11 +436,10 @@ function _cb_query_vars( array $public_query_vars ): array {
  * @return array The filtered array.
  */
 function _cb_request( array $query_vars ): array {
-	$inst = _get_instance();
-	if ( $inst->is_page_not_found ) {
+	if ( _get_instance()->is_page_not_found ) {
 		$query_vars['error'] = '404';
 	}
-	return array_merge( $query_vars, $inst->vars );
+	return $query_vars;
 }
 
 /**
@@ -455,25 +464,43 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
 
 
 /**
+ * Callback function for 'page_link' filter.
+ *
+ * @access private
+ *
+ * @param string $link The page's permalink.
+ * @return string The filtered URL.
+ */
+function _cb_page_link( string $link ): string {
+	list( $vars, $cur ) = _extract_vars( $link );
+
+	$norm = build_norm_path( $vars );
+	if ( $norm !== $cur ) {
+		$link = _replace_path( $link, $cur, $norm );
+	}
+	return $link;
+}
+
+/**
  * Callback function for 'post_link' filter.
  *
  * @access private
  *
- * @param string    $permalink The post's permalink.
- * @param ?\WP_Post $post      The post in question.
+ * @param string   $permalink The post's permalink.
+ * @param \WP_Post $post      The post in question.
  * @return string The filtered URL.
  */
-function _cb_post_link( string $permalink, ?\WP_Post $post ): string {
-	list( $vars, $cur ) = _extract_vars( $permalink );
+function _cb_post_link( string $permalink, \WP_Post $post ): string {
+	$cur = _extract_query_path( $permalink );
 
 	$inst = _get_instance();
 	foreach ( $inst->post_link_filters as $f ) {
-		$ret = call_user_func( $f, $vars, $post );
+		$ret = call_user_func( $f, $inst->vars, $post );
 		if ( $ret ) {
-			$vars = $ret;
+			$inst->vars = $ret;
 		}
 	}
-	$norm = build_norm_path( $vars );
+	$norm = build_norm_path( $inst->vars );
 	if ( $norm !== $cur ) {
 		$permalink = _replace_path( $permalink, $cur, $norm );
 	}
@@ -485,17 +512,18 @@ function _cb_post_link( string $permalink, ?\WP_Post $post ): string {
  *
  * @access private
  *
- * @param string $permalink The post's permalink.
+ * @param string $link The permalink.
  * @return string The filtered URL.
  */
-function _cb_link( string $permalink ): string {
-	list( $vars, $cur ) = _extract_vars( $permalink );
+function _cb_link( string $link ): string {
+	$cur = _extract_query_path( $link );
 
-	$norm = build_norm_path( $vars );
+	$inst = _get_instance();
+	$norm = build_norm_path( $inst->vars );
 	if ( $norm !== $cur ) {
-		$permalink = _replace_path( $permalink, $cur, $norm );
+		$link = _replace_path( $link, $cur, $norm );
 	}
-	return $permalink;
+	return $link;
 }
 
 
