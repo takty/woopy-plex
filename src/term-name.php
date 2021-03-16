@@ -1,13 +1,13 @@
 <?php
 /**
- * Taxonomy
+ * Term Name
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-15
+ * @version 2021-03-16
  */
 
-namespace wpinc\plex\taxonomy;
+namespace wpinc\plex\term_name;
 
 require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
@@ -34,11 +34,11 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
 	);
 	foreach ( $txs as $tx ) {
 		if ( ! is_admin() || ( is_admin() && ( 'post-new.php' === $pagenow || 'post.php' === $pagenow ) ) ) {
-			add_filter( "get_{$tx}", '\wpinc\plex\taxonomy\_cb_get_taxonomy', 10 );
+			add_filter( "get_{$tx}", '\wpinc\plex\term_name\_cb_get_taxonomy', 10 );
 		}
 		if ( is_admin() ) {
-			add_action( "{$tx}_edit_form_fields", '\wpinc\plex\taxonomy\_cb_taxonomy_edit_form_fields', 10, 2 );
-			add_action( "edited_$tx", '\wpinc\plex\taxonomy\_cb_edited_taxonomy', 10 );
+			add_action( "{$tx}_edit_form_fields", '\wpinc\plex\term_name\_cb_taxonomy_edit_form_fields', 10, 2 );
+			add_action( "edited_$tx", '\wpinc\plex\term_name\_cb_edited_taxonomy', 10 );
 		}
 	}
 	$inst = _get_instance();
@@ -54,7 +54,7 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
 		$inst->taxonomies_description = array_merge( $inst->taxonomies_description, $txs );
 		if ( ! is_admin() ) {
 			foreach ( $txs as $tx ) {
-				add_filter( "{$tx}_description", '\wpinc\plex\taxonomy\_cb_taxonomy_description', 10, 4 );
+				add_filter( "{$tx}_description", '\wpinc\plex\term_name\_cb_taxonomy_description', 10, 4 );
 			}
 		}
 	}
@@ -109,8 +109,8 @@ function initialize( $args = array() ) {
 
 	global $pagenow;
 	if ( ! is_admin() || ( is_admin() && ( 'post-new.php' === $pagenow || 'post.php' === $pagenow ) ) ) {
-		add_filter( 'get_object_terms', '\wpinc\plex\taxonomy\_cb_get_terms', 10 );
-		add_filter( 'get_terms', '\wpinc\plex\taxonomy\_cb_get_terms', 10 );
+		add_filter( 'get_object_terms', '\wpinc\plex\term_name\_cb_get_terms', 10 );
+		add_filter( 'get_terms', '\wpinc\plex\term_name\_cb_get_terms', 10 );
 	}
 }
 
@@ -251,7 +251,7 @@ function _cb_get_taxonomy( \WP_Term $term ): \WP_Term {
  *
  * @param \WP_Term $term     Term object.
  * @param string   $taxonomy The taxonomy slug.
- * @param object   $inst     The instance of plex\taxonomy.
+ * @param object   $inst     The instance of plex\term_name.
  * @param string   $key      The key of term metadata.
  */
 function _replace_term_name( \WP_Term $term, string $taxonomy, object $inst, string $key ) {
