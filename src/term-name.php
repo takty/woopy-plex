@@ -13,7 +13,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
- * The.
+ * Add taxonomy
  *
  * @param string|string[] $taxonomy_s Taxonomy slugs.
  * @param array           $args {
@@ -81,7 +81,7 @@ function set_admin_label_format( string $format ) {
 }
 
 /**
- * Initialize the taxonomy.
+ * Initialize the term name.
  *
  * @param array $args {
  *     Configuration arguments.
@@ -92,7 +92,7 @@ function set_admin_label_format( string $format ) {
  *     @type string $description_key_prefix   (Optional) Key prefix of term metadata for custom description.
  * }
  */
-function initialize( $args = array() ) {
+function initialize( array $args = array() ) {
 	$inst = _get_instance();
 
 	$args += array(
@@ -172,32 +172,6 @@ function term_description( int $term_id = 0, $args = null ) {
 		$ret = _get_term_field( 'description', $term_id );
 	}
 	return $ret;
-}
-
-
-// -----------------------------------------------------------------------------
-
-
-/**
- * Retrieve the label of current query variables.
- *
- * @access private
- *
- * @param string[] $slugs The slug combination.
- * @return string The label string.
- */
-function _get_admin_label( array $slugs ): string {
-	$inst = _get_instance();
-	$ls   = array_map(
-		function ( $s ) use ( $inst ) {
-			return $inst->slug_to_label[ $s ] ?? $s;
-		},
-		$slugs
-	);
-	if ( $inst->label_format ) {
-		return sprintf( $inst->label_format, ...$ls );
-	}
-	return implode( ' ', $ls );
 }
 
 
@@ -381,6 +355,28 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
 			_echo_description_field( $lab_d, $id_d, $name_d, $val_d );
 		}
 	}
+}
+
+/**
+ * Retrieve the label of current query variables.
+ *
+ * @access private
+ *
+ * @param string[] $slugs The slug combination.
+ * @return string The label string.
+ */
+function _get_admin_label( array $slugs ): string {
+	$inst = _get_instance();
+	$ls   = array_map(
+		function ( $s ) use ( $inst ) {
+			return $inst->slug_to_label[ $s ] ?? $s;
+		},
+		$slugs
+	);
+	if ( $inst->label_format ) {
+		return sprintf( $inst->label_format, ...$ls );
+	}
+	return implode( ' ', $ls );
 }
 
 /**
