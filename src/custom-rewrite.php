@@ -273,7 +273,11 @@ function _replace_path( string $url, string $before, string $after ): string {
 	$frag   = isset( $pu['fragment'] ) ? '#' . $pu['fragment'] : '';
 	// phpcs:enable
 
-	$path = str_replace( trailingslashit( "$home$before" ), trailingslashit( "$home$after" ), trailingslashit( $path ) );
+	$path = str_replace(
+		trailingslashit( "$home$before" ),
+		trailingslashit( "$home$after" ),
+		trailingslashit( $path )
+	);
 	$path = ( $home === $path ) ? $path : user_trailingslashit( $path );
 
 	return "$scheme$user$pass$host$port$path$query$frag";
@@ -410,9 +414,9 @@ function _cb_after_setup_theme() {
 	$full = build_full_path( $inst->vars );
 	$norm = build_norm_path( $inst->vars );
 
-	$erased = trim( empty( $cur ) ? "/$req/" : str_replace( "/$cur/", '/', "/$req/" ), '/' );
-	$added  = trim( empty( $cur ) ? "/$full/$req/" : str_replace( "/$cur/", "/$full/", "/$req/" ), '/' );
-	$ideal  = trim( empty( $cur ) ? "/$norm/$req/" : str_replace( "/$cur/", "/$norm/", "/$req/" ), '/' );
+	$erased = trim( empty( $cur ) ? "/$req/" : _str_replace_one( "/$cur/", '/', "/$req/" ), '/' );
+	$added  = trim( empty( $cur ) ? "/$full/$req/" : _str_replace_one( "/$cur/", "/$full/", "/$req/" ), '/' );
+	$ideal  = trim( empty( $cur ) ? "/$norm/$req/" : _str_replace_one( "/$cur/", "/$norm/", "/$req/" ), '/' );
 
 	list( $is_page_req, $pn_erased ) = _is_page_request( $erased, $req_file );
 
@@ -441,6 +445,21 @@ function _cb_after_setup_theme() {
 		}
 		_replace_request( $req, $erased );
 	}
+}
+
+/**
+ * Replace one occurrence of the search string with the replacement string.
+ *
+ * @access private
+ *
+ * @param string $search  The value being searched for.
+ * @param string $replace The replacement value that replaces found search values.
+ * @param string $subject The string being searched and replaced on.
+ * @return string A string with the replaced values.
+ */
+function _str_replace_one( string $search, string $replace, string $subject ) {
+	$search = preg_quote( $search, '/' );
+	return preg_replace( "/$search/", $replace, $subject, 1 );
 }
 
 /**
