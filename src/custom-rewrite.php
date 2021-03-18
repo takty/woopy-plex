@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-16
+ * @version 2021-03-18
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -29,6 +29,7 @@ function add_structure( array $args ) {
 		'slugs'        => array(),
 		'default_slug' => '',
 		'is_omittable' => false,
+		'is_global'    => false,
 	);
 	if ( empty( $args['var'] ) || empty( $args['slugs'] ) ) {
 		wp_die( '$args[\'var\'] and $args[\'slugs\'] must be assigned' );
@@ -372,6 +373,20 @@ function _extract_query_path( string $url ): string {
 	return implode( '/', $sps );
 }
 
+/**
+ * Set up the global variables.
+ *
+ * @access private
+ */
+function _register_globals() {
+	$inst = _get_instance();
+	foreach ( $inst->structures as $st ) {
+		if ( $st['is_global'] ) {
+			$GLOBALS[ $st['var'] ] = $inst->vars[ $st['var'] ] ?? null;
+		}
+	}
+}
+
 
 // -----------------------------------------------------------------------------
 
@@ -388,6 +403,7 @@ function _cb_after_setup_theme() {
 	}
 	list( $req, $req_file )   = _parse_request();
 	list( $inst->vars, $cur ) = _extract_vars( $req );
+	_register_globals();
 	if ( empty( $req ) ) {
 		return;
 	}
