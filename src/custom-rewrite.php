@@ -96,7 +96,7 @@ function set_query_var( string $var, string $value ) {
  * @return string Slugs of the query variable.
  */
 function get_query_var( string $var, string $default = '' ): string {
-	return _get_instance()->vars[ $var ];
+	return _get_instance()->vars[ $var ] ?? $default;
 }
 
 /**
