@@ -17,10 +17,8 @@ namespace wpinc\plex\custom_rewrite;
  *
  *     @type string   $var          Name of the variable.
  *     @type string[] $slugs        An array of slugs.
- *     @type string   $default_slug The default slug.
- *                                  Default empty.
- *     @type bool     $is_omittable Whether the variable is omittable.
- *                                  Default false.
+ *     @type string   $default_slug The default slug. Default empty.
+ *     @type bool     $is_omittable Whether the variable is omittable. Default false.
  * }
  */
 function add_structure( array $args ) {
@@ -29,7 +27,6 @@ function add_structure( array $args ) {
 		'slugs'        => array(),
 		'default_slug' => '',
 		'is_omittable' => false,
-		'is_global'    => false,
 	);
 	if ( empty( $args['var'] ) || empty( $args['slugs'] ) ) {
 		wp_die( '$args[\'var\'] and $args[\'slugs\'] must be assigned' );
@@ -379,9 +376,6 @@ function _extract_query_path( string $url ): string {
 function _register_globals() {
 	$inst = _get_instance();
 	foreach ( $inst->structures as $st ) {
-		if ( $st['is_global'] ) {
-			$GLOBALS[ $st['var'] ] = $inst->vars[ $st['var'] ] ?? null;
-		}
 		set_query_var( $st['var'], $inst->vars[ $st['var'] ] );
 	}
 }
