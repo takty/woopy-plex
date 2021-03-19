@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-19
+ * @version 2021-03-20
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -19,6 +19,7 @@ namespace wpinc\plex\custom_rewrite;
  *     @type string[] $slugs        An array of slugs.
  *     @type string   $default_slug The default slug. Default empty.
  *     @type bool     $is_omittable Whether the variable is omittable. Default false.
+ *     @type bool     $is_global    Whether the global variable is assigned. Default false.
  * }
  */
 function add_structure( array $args ) {
@@ -27,6 +28,7 @@ function add_structure( array $args ) {
 		'slugs'        => array(),
 		'default_slug' => '',
 		'is_omittable' => false,
+		'is_global'    => false,
 	);
 	if ( empty( $args['var'] ) || empty( $args['slugs'] ) ) {
 		wp_die( '$args[\'var\'] and $args[\'slugs\'] must be assigned' );
@@ -77,6 +79,27 @@ function initialize() {
 }
 
 /**
+ * Sets the value of a query variable in the custom rewrite.
+ *
+ * @param string $var   Query variable key.
+ * @param string $value Query variable value.
+ */
+function set_query_var( string $var, string $value ) {
+	return _get_instance()->vars[ $var ] = $val;
+}
+
+/**
+ * Retrieves the value of a query variable in the custom rewrite.
+ *
+ * @param string $var     The variable key to retrieve.
+ * @param string $default (Optional) Value to return if the query variable is not set. Default empty.
+ * @return string Slugs of the query variable.
+ */
+function get_query_var( string $var, string $default = '' ): string {
+	return _get_instance()->vars[ $var ];
+}
+
+/**
  * Retrieve rewrite structures.
  *
  * @param ?string $field (Optional) Field of rewrite structure args.
@@ -98,17 +121,6 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
 		return array_column( $structs, $field );
 	}
 	return $structs;
-}
-
-/**
- * Retrieve variable.
- *
- * @param string $var     The variable key to retrieve.
- * @param string $default (Optional) Value to return if the query variable is not set. Default empty.
- * @return string Slugs of the query variable.
- */
-function get_query_var( string $var, string $default = '' ): string {
-	return _get_instance()->vars[ $var ] ?? \get_query_var( $var, $default );
 }
 
 /**
@@ -163,85 +175,6 @@ function build_norm_path( array $vars = array() ): string {
 
 
 /**
- * Parse request to find query.
- *
- * @access private
- * @see WP::parse_request()
- * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
- *
- * @return array Array of requested path and requested file.
- */
-function _parse_request(): array {
-	global $wp_rewrite;
-	$rewrite = $wp_rewrite->wp_rewrite_rules();
-	if ( empty( $rewrite ) ) {
-		return array( '', '' );
-	}
-	// phpcs:disable
-	$pathinfo         = $_SERVER['PATH_INFO'] ?? '';
-	list( $pathinfo ) = explode( '?', $pathinfo );
-	$pathinfo         = str_replace( '%', '%25', $pathinfo );
-
-	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );
-	$home_path       = trim( parse_url( \home_url(), PHP_URL_PATH ), '/' );
-	$home_path_regex = sprintf( '|^%s|i', preg_quote( $home_path, '|' ) );
-	// phpcs:enable
-
-	$req_uri  = str_replace( $pathinfo, '', $req_uri );
-	$req_uri  = trim( $req_uri, '/' );
-	$req_uri  = preg_replace( $home_path_regex, '', $req_uri );
-	$req_uri  = trim( $req_uri, '/' );
-	$pathinfo = trim( $pathinfo, '/' );
-	$pathinfo = preg_replace( $home_path_regex, '', $pathinfo );
-	$pathinfo = trim( $pathinfo, '/' );
-
-	if ( ! empty( $pathinfo ) && ! preg_match( '|^.*' . $wp_rewrite->index . '$|', $pathinfo ) ) {
-		$req_path = $pathinfo;
-	} else {
-		if ( $req_uri === $wp_rewrite->index ) {
-			$req_uri = '';
-		}
-		$req_path = $req_uri;
-	}
-	$req_file = $req_uri;
-	return array( $req_path, $req_file );
-}
-
-/**
- * Whether the request is for page.
- *
- * @access private
- * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
- *
- * @param string $req_path Requested path.
- * @param string $req_file Requested file.
- * @return array Array of boolean value and pagename.
- */
-function _is_page_request( string $req_path, string $req_file ): array {
-	if ( empty( $req_path ) ) {
-		return array( true, '' );
-	}
-	global $wp_rewrite;
-	$rewrite = $wp_rewrite->wp_rewrite_rules();
-	if ( empty( $rewrite ) ) {
-		return array( false, null );
-	}
-	$req_match = $req_path;
-	foreach ( (array) $rewrite as $match => $query ) {
-		if ( ! empty( $req_file ) && strpos( $match, $req_file ) === 0 && $req_file !== $req_path ) {
-			$req_match = $req_file . '/' . $req_path;
-		}
-		if ( preg_match( "#^$match#", $req_match, $matches ) || preg_match( "#^$match#", urldecode( $req_match ), $matches ) ) {
-			if ( preg_match( '/pagename=\$matches\[([0-9]+)\]/', $query, $varmatch ) ) {
-				return array( true, $matches[ $varmatch[1] ] );  // A page is requested!
-			}
-			break;
-		}
-	}
-	return array( false, null );
-}
-
-/**
  * Replace path.
  *
  * @access private
@@ -277,41 +210,6 @@ function _replace_path( string $url, string $before, string $after ): string {
 
 	return "$scheme$user$pass$host$port$path$query$frag";
 }
-
-/**
- * Replace request.
- *
- * @access private
- *
- * @param string $req_path Requested path.
- * @param string $after    Replacement value.
- */
-function _replace_request( string $req_path, string $after ) {
-	// phpcs:disable
-	$_SERVER['REQUEST_URI_ORIG'] = $_SERVER['REQUEST_URI'] ?? '';
-	$_SERVER['REQUEST_URI']      = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );
-	// phpcs:enable
-}
-
-/**
- * Redirect.
- *
- * @access private
- *
- * @param string $req_path Requested path.
- * @param string $after    Replacement value.
- */
-function _redirect( string $req_path, string $after ) {
-	// phpcs:disable
-	$url = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );
-	// phpcs:enable
-	wp_safe_redirect( $url, 301 );
-	exit;
-}
-
-
-// -----------------------------------------------------------------------------
-
 
 /**
  * Extract variable slugs from URL.
@@ -364,18 +262,6 @@ function _extract_query_path( string $url ): string {
 		}
 	}
 	return implode( '/', $sps );
-}
-
-/**
- * Set up the global variables.
- *
- * @access private
- */
-function _register_globals() {
-	$inst = _get_instance();
-	foreach ( $inst->structures as $st ) {
-		set_query_var( $st['var'], $inst->vars[ $st['var'] ] );
-	}
 }
 
 
@@ -435,6 +321,65 @@ function _cb_after_setup_theme() {
 }
 
 /**
+ * Parse request to find query.
+ *
+ * @access private
+ * @see WP::parse_request()
+ * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
+ *
+ * @return array Array of requested path and requested file.
+ */
+function _parse_request(): array {
+	global $wp_rewrite;
+	$rewrite = $wp_rewrite->wp_rewrite_rules();
+	if ( empty( $rewrite ) ) {
+		return array( '', '' );
+	}
+	// phpcs:disable
+	$pathinfo         = $_SERVER['PATH_INFO'] ?? '';
+	list( $pathinfo ) = explode( '?', $pathinfo );
+	$pathinfo         = str_replace( '%', '%25', $pathinfo );
+
+	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );
+	$home_path       = trim( parse_url( \home_url(), PHP_URL_PATH ), '/' );
+	$home_path_regex = sprintf( '|^%s|i', preg_quote( $home_path, '|' ) );
+	// phpcs:enable
+
+	$req_uri  = str_replace( $pathinfo, '', $req_uri );
+	$req_uri  = trim( $req_uri, '/' );
+	$req_uri  = preg_replace( $home_path_regex, '', $req_uri );
+	$req_uri  = trim( $req_uri, '/' );
+	$pathinfo = trim( $pathinfo, '/' );
+	$pathinfo = preg_replace( $home_path_regex, '', $pathinfo );
+	$pathinfo = trim( $pathinfo, '/' );
+
+	if ( ! empty( $pathinfo ) && ! preg_match( '|^.*' . $wp_rewrite->index . '$|', $pathinfo ) ) {
+		$req_path = $pathinfo;
+	} else {
+		if ( $req_uri === $wp_rewrite->index ) {
+			$req_uri = '';
+		}
+		$req_path = $req_uri;
+	}
+	$req_file = $req_uri;
+	return array( $req_path, $req_file );
+}
+
+/**
+ * Set up the global variables.
+ *
+ * @access private
+ */
+function _register_globals() {
+	$inst = _get_instance();
+	foreach ( $inst->structures as $st ) {
+		if ( $st['is_global'] ) {
+			$GLOBALS[ $st['var'] ] = $inst->vars[ $st['var'] ];
+		}
+	}
+}
+
+/**
  * Replace one occurrence of the search string with the replacement string.
  *
  * @access private
@@ -447,6 +392,71 @@ function _cb_after_setup_theme() {
 function _str_replace_one( string $search, string $replace, string $subject ): string {
 	$s = preg_quote( $search, '/' );
 	return preg_replace( "/$s/", $replace, $subject, 1 );
+}
+
+/**
+ * Whether the request is for page.
+ *
+ * @access private
+ * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
+ *
+ * @param string $req_path Requested path.
+ * @param string $req_file Requested file.
+ * @return array Array of boolean value and pagename.
+ */
+function _is_page_request( string $req_path, string $req_file ): array {
+	if ( empty( $req_path ) ) {
+		return array( true, '' );
+	}
+	global $wp_rewrite;
+	$rewrite = $wp_rewrite->wp_rewrite_rules();
+	if ( empty( $rewrite ) ) {
+		return array( false, null );
+	}
+	$req_match = $req_path;
+	foreach ( (array) $rewrite as $match => $query ) {
+		if ( ! empty( $req_file ) && strpos( $match, $req_file ) === 0 && $req_file !== $req_path ) {
+			$req_match = $req_file . '/' . $req_path;
+		}
+		if ( preg_match( "#^$match#", $req_match, $matches ) || preg_match( "#^$match#", urldecode( $req_match ), $matches ) ) {
+			if ( preg_match( '/pagename=\$matches\[([0-9]+)\]/', $query, $varmatch ) ) {
+				return array( true, $matches[ $varmatch[1] ] );  // A page is requested!
+			}
+			break;
+		}
+	}
+	return array( false, null );
+}
+
+/**
+ * Redirect.
+ *
+ * @access private
+ *
+ * @param string $req_path Requested path.
+ * @param string $after    Replacement value.
+ */
+function _redirect( string $req_path, string $after ) {
+	// phpcs:disable
+	$url = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );
+	// phpcs:enable
+	wp_safe_redirect( $url, 301 );
+	exit;
+}
+
+/**
+ * Replace request.
+ *
+ * @access private
+ *
+ * @param string $req_path Requested path.
+ * @param string $after    Replacement value.
+ */
+function _replace_request( string $req_path, string $after ) {
+	// phpcs:disable
+	$_SERVER['REQUEST_URI_ORIG'] = $_SERVER['REQUEST_URI'] ?? '';
+	$_SERVER['REQUEST_URI']      = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );
+	// phpcs:enable
 }
 
 /**
@@ -513,8 +523,7 @@ function _cb_page_link( string $link ): string {
  * @return string The filtered URL.
  */
 function _cb_link( string $link, ?\WP_Post $post = null ): string {
-	$cur = _extract_query_path( $link );
-
+	$cur  = _extract_query_path( $link );
 	$inst = _get_instance();
 	if ( $post ) {
 		foreach ( $inst->post_link_filters as $f ) {
