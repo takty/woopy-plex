@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-19
+ * @version 2021-03-20
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -331,7 +331,7 @@ function _cb_submenu_file( ?string $submenu_file, string $parent_file ): ?string
 				}
 			}
 		} else {
-			$pf_id = get_query_var( ADMIN_QUERY_VAR );
+			$pf_id = \get_query_var( ADMIN_QUERY_VAR );
 			if ( $pf_id ) {
 				$submenu_file = add_query_arg( ADMIN_QUERY_VAR, $pf_id, EDIT_PAGE_URL );
 			}
@@ -353,11 +353,11 @@ function _cb_parse_query( \WP_Query $query ) {
 	if ( 'edit.php' !== $pagenow ) {
 		return;
 	}
-	$post_type = get_query_var( 'post_type' );
+	$post_type = \get_query_var( 'post_type' );
 	if ( 'page' !== $post_type ) {
 		return;
 	}
-	$page_id = get_query_var( ADMIN_QUERY_VAR );
+	$page_id = \get_query_var( ADMIN_QUERY_VAR );
 	if ( empty( $page_id ) ) {
 		return;
 	}
