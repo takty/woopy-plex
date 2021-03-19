@@ -1,13 +1,13 @@
 <?php
 /**
- * Post Filter
+ * Post Extractor
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-15
+ * @version 2021-03-19
  */
 
-namespace wpinc\plex\post_filter;
+namespace wpinc\plex\extractor;
 
 require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
@@ -71,21 +71,21 @@ function add_filtered_taxonomy( $taxonomy_s ) {
  */
 function initialize() {
 	if ( is_admin() ) {
-		add_action( 'edited_term_taxonomy', '\wpinc\plex\post_filter\_cb_edited_term_taxonomy', 10, 2 );
+		add_action( 'edited_term_taxonomy', '\wpinc\plex\extractor\_cb_edited_term_taxonomy', 10, 2 );
 	} else {
-		add_filter( 'get_next_post_join', '\wpinc\plex\post_filter\_cb_get_adjacent_post_join', 10, 5 );
-		add_filter( 'get_previous_post_join', '\wpinc\plex\post_filter\_cb_get_adjacent_post_join', 10, 5 );
-		add_filter( 'get_next_post_where', '\wpinc\plex\post_filter\_cb_get_adjacent_post_where', 10, 5 );
-		add_filter( 'get_previous_post_where', '\wpinc\plex\post_filter\_cb_get_adjacent_post_where', 10, 5 );
+		add_filter( 'get_next_post_join', '\wpinc\plex\extractor\_cb_get_adjacent_post_join', 10, 5 );
+		add_filter( 'get_previous_post_join', '\wpinc\plex\extractor\_cb_get_adjacent_post_join', 10, 5 );
+		add_filter( 'get_next_post_where', '\wpinc\plex\extractor\_cb_get_adjacent_post_where', 10, 5 );
+		add_filter( 'get_previous_post_where', '\wpinc\plex\extractor\_cb_get_adjacent_post_where', 10, 5 );
 
-		add_filter( 'getarchives_join', '\wpinc\plex\post_filter\_cb_getarchives_join', 10, 2 );
-		add_filter( 'getarchives_where', '\wpinc\plex\post_filter\_cb_getarchives_where', 10, 2 );
+		add_filter( 'getarchives_join', '\wpinc\plex\extractor\_cb_getarchives_join', 10, 2 );
+		add_filter( 'getarchives_where', '\wpinc\plex\extractor\_cb_getarchives_where', 10, 2 );
 
-		add_action( 'posts_join', '\wpinc\plex\post_filter\_cb_posts_join', 10, 2 );
-		add_action( 'posts_where', '\wpinc\plex\post_filter\_cb_posts_where', 10, 2 );
-		add_action( 'posts_groupby', '\wpinc\plex\post_filter\_cb_posts_groupby', 10, 2 );
+		add_action( 'posts_join', '\wpinc\plex\extractor\_cb_posts_join', 10, 2 );
+		add_action( 'posts_where', '\wpinc\plex\extractor\_cb_posts_where', 10, 2 );
+		add_action( 'posts_groupby', '\wpinc\plex\extractor\_cb_posts_groupby', 10, 2 );
 
-		\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\post_filter\_cb_filter_by_taxonomy' );
+		\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\extractor\_cb_filter_by_taxonomy' );
 	}
 }
 
