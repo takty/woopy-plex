@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-18
+ * @version 2021-03-19
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -382,6 +382,7 @@ function _register_globals() {
 		if ( $st['is_global'] ) {
 			$GLOBALS[ $st['var'] ] = $inst->vars[ $st['var'] ] ?? null;
 		}
+		set_query_var( $st['var'], $inst->vars[ $st['var'] ] );
 	}
 }
 
