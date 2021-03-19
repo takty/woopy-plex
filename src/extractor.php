@@ -47,8 +47,8 @@ function add_extracted_post_type( $post_type_s ) {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 	foreach ( $pts as $pt ) {
-		foreach ( $inst->var_to_taxonomy as $tax ) {
-			register_taxonomy_for_object_type( $tax, $pt );
+		foreach ( $inst->var_to_taxonomy as $tx ) {
+			register_taxonomy_for_object_type( $tx, $pt );
 		}
 	}
 	$inst->post_types = array_merge( $inst->post_types, $pts );
@@ -162,8 +162,8 @@ function _get_term_taxonomy_ids(): array {
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
-		$tax  = $inst->var_to_taxonomy[ $var ];
-		$term = get_term_by( 'slug', get_query_var( $tax ), $tax );
+		$tx   = $inst->var_to_taxonomy[ $var ];
+		$term = get_term_by( 'slug', get_query_var( $tx ), $tx );
 		if ( $term ) {
 			$ret[] = $term->term_taxonomy_id;
 		}
@@ -428,7 +428,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	if ( empty( $inst->counted_taxonomies ) ) {
 		return;
 	}
-	$taxes = array_map(
+	$txs = array_map(
 		function ( $var ) use ( $inst ) {
 			return $inst->var_to_taxonomy[ $var ];
 		},
@@ -436,7 +436,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	);
 
 	$is_filtered = in_array( $taxonomy, $inst->counted_taxonomies, true );
-	if ( ! $is_filtered && ! in_array( $taxonomy, $taxes, true ) ) {
+	if ( ! $is_filtered && ! in_array( $taxonomy, $txs, true ) ) {
 		return;
 	}
 	if ( $is_filtered ) {
@@ -454,8 +454,8 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 
 		foreach ( $skc as $key => $slugs ) {
 			$tts = array();
-			foreach ( $taxes as $idx => $tax ) {
-				$t = get_term_by( 'slug', $slugs[ $idx ], $tax );
+			foreach ( $txs as $idx => $tx ) {
+				$t = get_term_by( 'slug', $slugs[ $idx ], $tx );
 				if ( $t ) {
 					$tts[] = $t->term_taxonomy_id;
 				}
