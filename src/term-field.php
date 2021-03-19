@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-19
+ * @version 2021-03-20
  */
 
 namespace wpinc\plex\term_field;
@@ -95,7 +95,7 @@ function initialize( array $args = array() ) {
 	$inst->key_pre_description   = $args['description_key_prefix'];
 
 	global $pagenow;
-	if ( ! is_admin() || ( is_admin() && ( 'post-new.php' === $pagenow || 'post.php' === $pagenow ) ) ) {
+	if ( ! is_admin() || ( is_admin() && in_array( $pagenow, array( 'post-new.php', 'post.php', 'edit.php' ), true ) ) ) {
 		add_filter( 'get_object_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
 		add_filter( 'get_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
 		foreach ( $inst->taxonomies as $tx ) {
