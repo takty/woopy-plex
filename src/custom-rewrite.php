@@ -53,12 +53,10 @@ function add_post_link_filter( callable $callback ) {
  * Initialize the custom rewrite.
  */
 function initialize() {
-	$inst = _get_instance();
-	if ( $inst->is_initialized ) {
+	static $initialized = 0;
+	if ( $initialized++ ) {
 		return;
 	}
-	$inst->is_initialized = true;
-
 	if ( ! is_admin() ) {
 		add_action( 'after_setup_theme', '\wpinc\plex\custom_rewrite\_cb_after_setup_theme', 1 );
 		add_filter( 'request', '\wpinc\plex\custom_rewrite\_cb_request' );
@@ -563,13 +561,6 @@ function _get_instance(): object {
 		 * @var callable[]
 		 */
 		public $post_link_filters = array();
-
-		/**
-		 * Whether the custom rewrite is initialized.
-		 *
-		 * @var bool
-		 */
-		public $is_initialized = false;
 
 		/**
 		 * The query vars.

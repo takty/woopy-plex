@@ -76,6 +76,10 @@ function add_counted_taxonomy( $taxonomy_s ) {
  * }
  */
 function initialize( array $args = array() ) {
+	static $initialized = 0;
+	if ( $initialized++ ) {
+		return;
+	}
 	$inst = _get_instance();
 
 	$args += array(

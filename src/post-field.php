@@ -50,6 +50,10 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  * }
  */
 function initialize( array $args = array() ) {
+	static $initialized = 0;
+	if ( $initialized++ ) {
+		return;
+	}
 	$inst = _get_instance();
 
 	$args += array(
