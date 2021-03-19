@@ -13,13 +13,13 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
- * Register taxonomy used for filtering.
+ * Register taxonomy used for extraction.
  *
- * @param string  $taxonomy The taxonomy used for filtering.
+ * @param string  $taxonomy The taxonomy used for extraction.
  * @param string  $label    The label of the taxonomy.
  * @param ?string $var      (Optional) The query variable name related to the taxonomy.
  */
-function add_filter_taxonomy( string $taxonomy, string $label, ?string $var = null ) {
+function add_extraction_taxonomy( string $taxonomy, string $label, ?string $var = null ) {
 	$var  = $var ?? $taxonomy;
 	$args = array(
 		'label'             => $label,
@@ -34,16 +34,16 @@ function add_filter_taxonomy( string $taxonomy, string $label, ?string $var = nu
 	foreach ( $inst->post_types as $pt ) {
 		register_taxonomy_for_object_type( $taxonomy, $pt );
 	}
-	$inst->vars[]                  = $taxonomy;
+	$inst->vars[]                  = $var;
 	$inst->var_to_taxonomy[ $var ] = $taxonomy;
 }
 
 /**
- * Add filtered post types.
+ * Add extracted post types.
  *
  * @param array|string $post_type_s A post type or an array of post types.
  */
-function add_filtered_post_type( $post_type_s ) {
+function add_extracted_post_type( $post_type_s ) {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 	foreach ( $pts as $pt ) {
@@ -55,15 +55,15 @@ function add_filtered_post_type( $post_type_s ) {
 }
 
 /**
- * Add filtered taxonomies.
+ * Add counted taxonomies.
  *
  * @param array|string $taxonomy_s A taxonomy or an array of taxonomies.
  */
-function add_filtered_taxonomy( $taxonomy_s ) {
+function add_counted_taxonomy( $taxonomy_s ) {
 	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
 	$inst = _get_instance();
 
-	$inst->filtered_taxonomies = array_merge( $inst->filtered_taxonomies, $txs );
+	$inst->counted_taxonomies = array_merge( $inst->counted_taxonomies, $txs );
 }
 
 /**
@@ -411,24 +411,24 @@ function _cb_filter_by_taxonomy( array $vars, ?\WP_Post $post = null ): array {
  */
 function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	$inst = _get_instance();
-	if ( empty( $inst->filtered_taxonomies ) ) {
+	if ( empty( $inst->counted_taxonomies ) ) {
 		return;
 	}
 	$taxes = array_map(
-		function ( $st ) use ( $inst ) {
-			return $inst->var_to_taxonomy[ $st['var'] ];
+		function ( $var ) use ( $inst ) {
+			return $inst->var_to_taxonomy[ $var ];
 		},
-		\wpinc\plex\custom_rewrite\get_structures( null, $inst->vars )
+		\wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars )
 	);
 
-	$is_filtered = in_array( $taxonomy, $inst->filtered_taxonomies, true );
+	$is_filtered = in_array( $taxonomy, $inst->counted_taxonomies, true );
 	if ( ! $is_filtered && ! in_array( $taxonomy, $taxes, true ) ) {
 		return;
 	}
 	if ( $is_filtered ) {
 		$tars = array( $tt_id );
 	} else {
-		$tars = get_terms( $inst->filtered_taxonomies, array( 'hide_empty' => false ) );
+		$tars = get_terms( $inst->counted_taxonomies, array( 'hide_empty' => false ) );
 	}
 	$pts       = "('" . implode( "', '", $inst->post_types ) . "')";
 	$slug_comb = \wpinc\plex\get_slug_combination();
@@ -502,11 +502,11 @@ function _get_instance(): object {
 		public $post_types = array();
 
 		/**
-		 * The filtered taxonomies.
+		 * The counted taxonomies.
 		 *
 		 * @var array
 		 */
-		public $filtered_taxonomies = array();
+		public $counted_taxonomies = array();
 
 		/**
 		 * Whether the get_terms filter is suppressed.

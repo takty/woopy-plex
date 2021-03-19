@@ -1,13 +1,13 @@
 <?php
 /**
- * Post Content
+ * Post Fields
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-16
+ * @version 2021-03-19
  */
 
-namespace wpinc\plex\post_content;
+namespace wpinc\plex\post_field;
 
 require_once __DIR__ . '/custom-rewrite.php';
 
@@ -21,7 +21,7 @@ function add_post_type( $post_type_s ) {
 	$inst = _get_instance();
 
 	foreach ( $pts as $pt ) {
-		add_action( "save_post_$pt", '\wpinc\plex\post_content\_cb_save_post', 10, 2 );
+		add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10, 2 );
 	}
 	$inst->post_types = array_merge( $inst->post_types, $pts );
 }
@@ -63,7 +63,7 @@ function initialize( array $args = array() ) {
 	$args += array(
 		'vars'               => array(),
 		'title_key_prefix'   => '_post_title_',
-		'content_key_prefix' => '_post_content_',
+		'content_key_prefix' => '_post_field_',
 	);
 
 	$inst->vars            = $args['vars'];
@@ -71,12 +71,12 @@ function initialize( array $args = array() ) {
 	$inst->key_pre_content = $args['content_key_prefix'];
 
 	if ( is_admin() ) {
-		add_action( 'admin_head', '\wpinc\plex\post_content\_cb_admin_head' );
-		add_action( 'admin_menu', '\wpinc\plex\post_content\_cb_admin_menu' );
+		add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
+		add_action( 'admin_menu', '\wpinc\plex\post_field\_cb_admin_menu' );
 	} else {
-		add_filter( 'single_post_title', '\wpinc\plex\post_content\_cb_single_post_title', 10, 2 );
-		add_filter( 'the_title', '\wpinc\plex\post_content\_cb_the_title', 10, 2 );
-		add_filter( 'the_content', '\wpinc\plex\post_content\_cb_the_content' );
+		add_filter( 'single_post_title', '\wpinc\plex\post_field\_cb_single_post_title', 10, 2 );
+		add_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
+		add_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
 	}
 }
 
@@ -172,9 +172,9 @@ function _cb_the_content( string $content ): string {
 	if ( empty( $c ) ) {
 		return $content;
 	}
-	remove_filter( 'the_content', '\wpinc\plex\post_content\_cb_the_content' );
+	remove_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
 	$c = apply_filters( 'the_content', $c );
-	add_filter( 'the_content', '\wpinc\plex\post_content\_cb_the_content' );
+	add_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
 	return str_replace( ']]>', ']]&gt;', $c );
 }
 
@@ -249,7 +249,7 @@ function _cb_admin_menu() {
 				"post_$lang",
 				"$post_type_name $lab_pf",
 				function () use ( $key ) {
-					\wpinc\plex\post_content\_output_html( $key );
+					\wpinc\plex\post_field\_output_html( $key );
 				},
 				$pt,
 				'advanced',
