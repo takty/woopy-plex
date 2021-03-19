@@ -188,6 +188,9 @@ function _cb_get_terms( array $terms ) {
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
 		foreach ( $terms as $t ) {
+			if ( ! ( $t instanceof WP_Term ) ) {
+				$t = get_term( $t );
+			}
 			if ( in_array( $t->taxonomy, $inst->taxonomies, true ) ) {
 				_replace_term_name( $t, $t->taxonomy, $inst, $key );
 			}
