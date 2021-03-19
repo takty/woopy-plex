@@ -13,6 +13,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 const ADMIN_QUERY_VAR = 'pseudo_front';
+const EDIT_PAGE_URL   = 'edit.php?post_type=page';
 
 /**
  * Add an array of slug to label.
@@ -57,9 +58,11 @@ function initialize( array $args = array() ) {
 
 		add_filter( 'query_vars', '\wpinc\plex\pseudo_front\_cb_query_vars' );
 		add_action( 'admin_menu', '\wpinc\plex\pseudo_front\_cb_admin_menu' );
+		add_action( 'submenu_file', '\wpinc\plex\pseudo_front\_cb_submenu_file', 10, 2 );
 		add_action( 'parse_query', '\wpinc\plex\pseudo_front\_cb_parse_query' );
 
 		add_filter( 'display_post_states', '\wpinc\plex\pseudo_front\_cb_display_post_states', 10, 2 );
+		add_filter( 'admin_head', '\wpinc\plex\pseudo_front\_cb_admin_head' );
 	} else {
 		add_filter( 'option_page_on_front', '\wpinc\plex\pseudo_front\_cb_option_page_on_front' );
 		add_filter( 'redirect_canonical', '\wpinc\plex\pseudo_front\_cb_redirect_canonical', 1, 2 );
@@ -93,6 +96,28 @@ function home_url( string $path = '', ?string $scheme = null, array $vars = arra
 		$path = '/' . ltrim( $path, '/' );
 	}
 	return \home_url( $fp . $path, $scheme );
+}
+
+
+// -----------------------------------------------------------------------------
+
+
+/**
+ * Retrieves the post IDs of pseudo front pages.
+ *
+ * @access private
+ *
+ * @return int[] Post IDs.
+ */
+function _get_front_page_ids(): array {
+	$ids = array();
+	foreach ( \wpinc\plex\get_slug_key_to_combination() as $slugs ) {
+		$page = get_page_by_path( implode( '/', $slugs ) );
+		if ( $page ) {
+			$ids[] = $page->ID;
+		}
+	}
+	return $ids;
 }
 
 
@@ -274,10 +299,41 @@ function _cb_admin_menu() {
 		$page = get_page_by_path( implode( '/', $slugs ) );
 		if ( $page ) {
 			$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
-			$slug  = add_query_arg( ADMIN_QUERY_VAR, $page->ID, 'edit.php?post_type=page' );
+			$slug  = add_query_arg( ADMIN_QUERY_VAR, $page->ID, EDIT_PAGE_URL );
 			add_pages_page( '', $title, 'edit_pages', $slug );
 		}
 	}
+}
+
+/**
+ * Callback function for 'submenu_file' filter.
+ *
+ * @access private
+ *
+ * @param string $submenu_file The submenu file.
+ * @param string $parent_file  The submenu item's parent file.
+ * @return string The filtered file.
+ */
+function _cb_submenu_file( string $submenu_file, string $parent_file ): string {
+	if ( EDIT_PAGE_URL === $parent_file ) {
+		global $post;
+		if ( $post ) {
+			$as   = get_post_ancestors( $post );
+			$as[] = intval( $post->ID );
+			foreach ( _get_front_page_ids() as $pf_id ) {
+				if ( in_array( $pf_id, $as, true ) ) {
+					$submenu_file = add_query_arg( ADMIN_QUERY_VAR, $pf_id, EDIT_PAGE_URL );
+					break;
+				}
+			}
+		} else {
+			$pf_id = get_query_var( ADMIN_QUERY_VAR );
+			if ( $pf_id ) {
+				$submenu_file = add_query_arg( ADMIN_QUERY_VAR, $pf_id, EDIT_PAGE_URL );
+			}
+		}
+	}
+	return $submenu_file;
 }
 
 /**
@@ -307,18 +363,16 @@ function _cb_parse_query( \WP_Query $query ) {
 	$ids   = array_reverse( get_post_ancestors( $page_id ) );
 	$ids[] = $page_id;
 
-	$args = array(
-		'child_of'    => $page_id,
-		'sort_column' => 'menu_order',
-		'post_status' => 'publish,future,draft,pending,private',
+	$ps = get_pages(
+		array(
+			'child_of'    => $page_id,
+			'sort_column' => 'menu_order',
+			'post_status' => 'publish,future,draft,pending,private',
+		)
 	);
-
-	$ids = array_map(
-		function ( $p ) {
-			return $p->ID;
-		},
-		get_pages( $args )
-	);
+	foreach ( $ps as $p ) {
+		$ids[] = $p->ID;
+	}
 	$query->set( 'post__in', $ids );
 	$query->set( 'orderby', 'post__in' );
 }
@@ -335,13 +389,27 @@ function _cb_parse_query( \WP_Query $query ) {
 function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 	unset( $post_states['page_on_front'] );
 
-	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
-		$page = get_page_by_path( implode( '/', $slugs ) );
-		if ( $page && $page->ID === $post->ID ) {
-			$post_states['page_on_front'] = _x( 'Front Page', 'page label' );
-		}
+	$ids = _get_front_page_ids();
+	if ( in_array( intval( $post->ID ), $ids, true ) ) {
+		$post_states['page_on_front'] = _x( 'Front Page', 'page label' );
 	}
 	return $post_states;
+}
+
+
+/**
+ * Callback function for 'admin_head' hook.
+ *
+ * @access private
+ */
+function _cb_admin_head() {
+	// phpcs:disable
+	echo '<style>';
+	foreach ( _get_front_page_ids() as $id ) {
+		echo "body.post-type-page select#parent_id option[value='$id'] { font-weight: bold; }\n";
+	}
+	echo '</style>';
+	// phpcs:enable
 }
 
 
@@ -362,10 +430,11 @@ function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
 		$path = implode( '/', $slugs );
 		$page = get_page_by_path( $path );
 		if ( $page ) {
-			$node = array(
+			$title = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
+			$node  = array(
 				'id'     => 'view-site-' . str_replace( '_', '-', $key ),
 				'parent' => 'site-name',
-				'title'  => esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) ),
+				'title'  => esc_html( $title ),
 				'href'   => \home_url( $path ),
 			);
 			$wp_admin_bar->add_menu( $node );
