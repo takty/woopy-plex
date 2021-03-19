@@ -162,10 +162,10 @@ function _get_term_taxonomy_ids(): array {
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
-		$tx   = $inst->var_to_taxonomy[ $var ];
-		$term = get_term_by( 'slug', get_query_var( $tx ), $tx );
-		if ( $term ) {
-			$ret[] = $term->term_taxonomy_id;
+		$tx = $inst->var_to_taxonomy[ $var ];
+		$t  = get_term_by( 'slug', \wpinc\plex\custom_rewrite\get_query_var( $var ), $tx );
+		if ( $t ) {
+			$ret[] = $t->term_taxonomy_id;
 		}
 	}
 	return $ret;
@@ -402,7 +402,7 @@ function _cb_filter_by_taxonomy( array $vars, ?\WP_Post $post = null ): array {
 			$terms
 		);
 
-		$slug = get_query_var( $var );
+		$slug = \wpinc\plex\custom_rewrite\get_query_var( $var );
 		if ( in_array( $slug, $term_slugs, true ) ) {
 			$vars[ $var ] = $slug;
 		}
