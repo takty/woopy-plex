@@ -20,30 +20,22 @@ function add_post_type( $post_type_s ) {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 
-	foreach ( $pts as $pt ) {
-		add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10, 2 );
-	}
 	$inst->post_types = array_merge( $inst->post_types, $pts );
 }
 
 /**
  * Add an array of slug to label.
  *
- * @param array $slug_to_label An array of slug to label.
+ * @param array  $slug_to_label An array of slug to label.
+ * @param string $format        A format to assign.
  */
-function add_admin_labels( array $slug_to_label ) {
+function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
-}
-
-/**
- * Assign a format for displaying admin labels.
- *
- * @param string $format A format to assign.
- */
-function set_admin_label_format( string $format ) {
-	_get_instance()->label_format = $format;
+	if ( $format ) {
+		$inst->label_format = $format;
+	}
 }
 
 /**
@@ -73,6 +65,9 @@ function initialize( array $args = array() ) {
 	if ( is_admin() ) {
 		add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
 		add_action( 'admin_menu', '\wpinc\plex\post_field\_cb_admin_menu' );
+		foreach ( $inst->post_types as $pt ) {
+			add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10, 2 );
+		}
 	} else {
 		add_filter( 'single_post_title', '\wpinc\plex\post_field\_cb_single_post_title', 10, 2 );
 		add_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
@@ -182,22 +177,25 @@ function _cb_the_content( string $content ): string {
 // -----------------------------------------------------------------------------
 
 
-function _cb_save_post( $pid, $post ) {
+/**
+ * Callback function for 'save_post_{$post_type}' hook.
+ *
+ * @access private
+ *
+ * @param int      $post_id Post ID.
+ * @param \WP_Post $post    Post object.
+ */
+function _cb_save_post( int $post_id, \WP_Post $post ) {
 	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 		return;
 	}
-	if ( ! current_user_can( 'edit_post', $pid ) ) {
+	if ( ! current_user_can( 'edit_post', $post_id ) ) {
 		return;
 	}
-	$inst    = _get_instance();
-	$def_key = \wpinc\plex\get_default_key( $inst->vars );
-	$scs     = \wpinc\plex\get_slug_combination( $inst->vars );
+	$inst = _get_instance();
+	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 
-	foreach ( $scs as $slugs ) {
-		$key = implode( '_', $slugs );
-		if ( $key === $def_key ) {
-			continue;
-		}
+	foreach ( $skc as $key => $slugs ) {
 		if ( ! isset( $_POST[ "post_{$key}_nonce" ] ) ) {
 			continue;
 		}
@@ -210,28 +208,41 @@ function _cb_save_post( $pid, $post ) {
 		// phpcs:enable
 		$title   = apply_filters( 'title_save_pre', $title );
 		$content = apply_filters( 'content_save_pre', $content );
-		update_post_meta( $pid, $inst->key_pre_title . $key, $title );
-		update_post_meta( $pid, $inst->key_pre_content . $key, $content );
+		update_post_meta( $post_id, $inst->key_pre_title . $key, $title );
+		update_post_meta( $post_id, $inst->key_pre_content . $key, $content );
 	}
 }
 
+/**
+ * Callback function for 'admin_head' hook.
+ *
+ * @access private
+ */
 function _cb_admin_head() {
 	?>
 <style>
-	.st-multilang-title input {
-		margin: 0 0 6px; padding: 3px 8px;
-		width: 100%; height: 1.7em;
-		font-size: 1.7em; line-height: 100%;
-		background-color: #fff; outline: none;
+	.wpinc-plex-post-field-title input {
+		margin          : 0 0 6px;
+		padding         : 3px 8px;
+		width           : 100%;
+		height          : 1.7em;
+		font-size       : 1.7em;
+		line-height     : 100%;
+		background-color: #fff;
+		outline         : 0;
 	}
 </style>
 	<?php
 }
 
+/**
+ * Callback function for 'admin_menu' hook.
+ *
+ * @access private
+ */
 function _cb_admin_menu() {
-	$inst    = _get_instance();
-	$def_key = \wpinc\plex\get_default_key( $inst->vars );
-	$scs     = \wpinc\plex\get_slug_combination( $inst->vars );
+	$inst = _get_instance();
+	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 
 	foreach ( $inst->post_types as $pt ) {
 		$pto = get_post_type_object( $pt );
@@ -239,17 +250,13 @@ function _cb_admin_menu() {
 			continue;
 		}
 		$post_type_name = $pto->labels->name;
-		foreach ( $scs as $slugs ) {
-			$key = implode( '_', $slugs );
-			if ( $key === $def_key ) {
-				continue;
-			}
-			$lab_pf = _get_admin_label( $slugs );
+		foreach ( $skc as $key => $slugs ) {
+			$lab_pf = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
 			add_meta_box(
-				"post_$lang",
+				"post_$key",
 				"$post_type_name $lab_pf",
 				function () use ( $key ) {
-					\wpinc\plex\post_field\_output_html( $key );
+					\wpinc\plex\post_field\_echo_title_content_field( $key );
 				},
 				$pt,
 				'advanced',
@@ -260,39 +267,25 @@ function _cb_admin_menu() {
 }
 
 /**
- * Retrieve the label of current query variables.
+ * Function that echos the field of title and content.
  *
  * @access private
+ * @global $post
  *
- * @param string[] $slugs The slug combination.
- * @return string The label string.
+ * @param string $key The key of the fields.
  */
-function _get_admin_label( array $slugs ): string {
-	$inst = _get_instance();
-	$ls   = array_map(
-		function ( $s ) use ( $inst ) {
-			return $inst->slug_to_label[ $s ] ?? $s;
-		},
-		$slugs
-	);
-	if ( $inst->label_format ) {
-		return sprintf( $inst->label_format, ...$ls );
-	}
-	return implode( ' ', $ls );
-}
-
-function _output_html( $key ) {
+function _echo_title_content_field( $key ) {
 	global $post;
 	$name        = $inst->key_pre_title . $key;
-	$value       = get_post_meta( $post->ID, $inst->key_pre_title . $key, true );
+	$title       = get_post_meta( $post->ID, $name, true );
 	$placeholder = apply_filters( 'enter_title_here', __( 'Add title' ), $post );
 	wp_nonce_field( "post_$key", "post_{$key}_nonce" );
 	?>
-<div class="st-multilang-title" id="titlewrap_<?php echo esc_attr( $key ); ?>">
+<div class="wpinc-plex-post-field-title">
 	<input
 		id="<?php echo esc_attr( $name ); ?>"
 		name="<?php echo esc_attr( $name ); ?>"
-		value="<?php echo esc_attr( $value ); ?>"
+		value="<?php echo esc_attr( $title ); ?>"
 		placeholder="<?php echo esc_attr( $placeholder ); ?>"
 		size="30"
 		type="text"
@@ -301,8 +294,8 @@ function _output_html( $key ) {
 	>
 </div>
 	<?php
-	$content = get_post_meta( $post->ID, $name, true );
-	wp_editor( $content, $name );
+	$content = get_post_meta( $post->ID, $inst->key_pre_content . $key, true );
+	wp_editor( $content, $inst->key_pre_content . $key );
 }
 
 

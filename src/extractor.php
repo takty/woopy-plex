@@ -68,8 +68,22 @@ function add_counted_taxonomy( $taxonomy_s ) {
 
 /**
  * Initialize the post filter.
+ *
+ * @param array $args {
+ *     Configuration arguments.
+ *
+ *     @type string $count_key_prefix (Optional) Key prefix of term count.
+ * }
  */
-function initialize() {
+function initialize( array $args = array() ) {
+	$inst = _get_instance();
+
+	$args += array(
+		'count_key_prefix' => '_count_',
+	);
+
+	$inst->key_pre_count = $args['count_key_prefix'];
+
 	if ( is_admin() ) {
 		add_action( 'edited_term_taxonomy', '\wpinc\plex\extractor\_cb_edited_term_taxonomy', 10, 2 );
 	} else {
@@ -430,15 +444,15 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	} else {
 		$tars = get_terms( $inst->counted_taxonomies, array( 'hide_empty' => false ) );
 	}
-	$pts       = "('" . implode( "', '", $inst->post_types ) . "')";
-	$slug_comb = \wpinc\plex\get_slug_combination();
+	$pts = "('" . implode( "', '", $inst->post_types ) . "')";
+	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars );
 
 	global $wpdb;
 	foreach ( $tars as $tar ) {
 		$tt_id   = $tar->term_taxonomy_id;
 		$term_id = $tar->term_id;
 
-		foreach ( $slug_comb as $slugs ) {
+		foreach ( $skc as $key => $slugs ) {
 			$tts = array();
 			foreach ( $taxes as $idx => $tax ) {
 				$t = get_term_by( 'slug', $slugs[ $idx ], $tax );
@@ -457,8 +471,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 				$count = (int) $wpdb->get_var( $q );
 				// phpcs:enable
 			}
-			$tmk = 'count_' . str_replace( '-', '_', implode( '_', $slugs ) );
-			update_term_meta( $term_id, $tmk, $count );
+			update_term_meta( $term_id, $inst->key_pre_count . $key, $count );
 		}
 	}
 }
@@ -507,6 +520,13 @@ function _get_instance(): object {
 		 * @var array
 		 */
 		public $counted_taxonomies = array();
+
+		/**
+		 * The key prefix of term count
+		 *
+		 * @var string
+		 */
+		public $key_pre_count = '';
 
 		/**
 		 * Whether the get_terms filter is suppressed.

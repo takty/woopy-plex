@@ -25,23 +25,14 @@ require_once __DIR__ . '/slug-key.php';
  * }
  */
 function add_taxonomy( $taxonomy_s, array $args = array() ) {
-	$txs = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
+	$inst = _get_instance();
+	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
 
 	$args += array(
 		'has_singular_name'         => false,
 		'has_default_singular_name' => false,
 		'has_description'           => false,
 	);
-	foreach ( $txs as $tx ) {
-		if ( ! is_admin() || ( is_admin() && ( 'post-new.php' === $pagenow || 'post.php' === $pagenow ) ) ) {
-			add_filter( "get_{$tx}", '\wpinc\plex\term_field\_cb_get_taxonomy', 10 );
-		}
-		if ( is_admin() ) {
-			add_action( "{$tx}_edit_form_fields", '\wpinc\plex\term_field\_cb_taxonomy_edit_form_fields', 10, 2 );
-			add_action( "edited_$tx", '\wpinc\plex\term_field\_cb_edited_taxonomy', 10 );
-		}
-	}
-	$inst = _get_instance();
 
 	$inst->taxonomies = array_merge( $inst->taxonomies, $txs );
 	if ( $args['has_singular_name'] ) {
@@ -52,36 +43,28 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
 	}
 	if ( $args['has_description'] ) {
 		$inst->taxonomies_description = array_merge( $inst->taxonomies_description, $txs );
-		if ( ! is_admin() ) {
-			foreach ( $txs as $tx ) {
-				add_filter( "{$tx}_description", '\wpinc\plex\term_field\_cb_taxonomy_description', 10, 4 );
-			}
-		}
 	}
 }
 
 /**
  * Add an array of slug to label.
  *
- * @param array $slug_to_label An array of slug to label.
+ * @param array  $slug_to_label An array of slug to label.
+ * @param string $format        A format to assign.
  */
-function add_admin_labels( array $slug_to_label ) {
+function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
-}
-
-/**
- * Assign a format for displaying admin labels.
- *
- * @param string $format A format to assign.
- */
-function set_admin_label_format( string $format ) {
-	_get_instance()->label_format = $format;
+	if ( $format ) {
+		$inst->label_format = $format;
+	}
 }
 
 /**
  * Initialize the term name.
+ *
+ * @global string $pagenow
  *
  * @param array $args {
  *     Configuration arguments.
@@ -111,6 +94,19 @@ function initialize( array $args = array() ) {
 	if ( ! is_admin() || ( is_admin() && ( 'post-new.php' === $pagenow || 'post.php' === $pagenow ) ) ) {
 		add_filter( 'get_object_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
 		add_filter( 'get_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
+		foreach ( $inst->taxonomies as $tx ) {
+			add_filter( "get_{$tx}", '\wpinc\plex\term_field\_cb_get_taxonomy', 10 );
+		}
+	}
+	if ( is_admin() ) {
+		foreach ( $inst->taxonomies as $tx ) {
+			add_action( "{$tx}_edit_form_fields", '\wpinc\plex\term_field\_cb_taxonomy_edit_form_fields', 10, 2 );
+			add_action( "edited_$tx", '\wpinc\plex\term_field\_cb_edited_taxonomy', 10 );
+		}
+	} else {
+		foreach ( $inst->taxonomies_description as $tx ) {
+			add_filter( "{$tx}_description", '\wpinc\plex\term_field\_cb_taxonomy_description', 10, 4 );
+		}
 	}
 }
 
@@ -305,9 +301,8 @@ function _get_term_field( string $field, int $term_id ) {
  * @param string   $taxonomy Current taxonomy slug.
  */
 function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
-	$inst    = _get_instance();
-	$def_key = \wpinc\plex\get_default_key( $inst->vars );
-	$t_meta  = get_term_meta( $term->term_id );
+	$inst   = _get_instance();
+	$t_meta = get_term_meta( $term->term_id );
 
 	$def_slugs  = \wpinc\plex\custom_rewrite\get_structures( 'default_slug', $inst->vars );
 	$lab_base_n = esc_html_x( 'Name', 'term name', 'default' );
@@ -317,8 +312,9 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
 	$has_desc   = in_array( $taxonomy, $inst->taxonomies_description, true );
 
 	if ( $has_def_sn ) {
-		$lab_pf = _get_admin_label( $def_slugs );
-		$lab_n  = "$lab_base_n $lab_pf";
+		$def_key = \wpinc\plex\get_default_key( $inst->vars );
+		$lab_pf  = \wpinc\plex\get_admin_label( $def_slugs, $inst->slug_to_label, $inst->label_format );
+		$lab_n   = "$lab_base_n $lab_pf";
 
 		$id_sn   = $inst->key_pre_singular_name . $def_key;
 		$name_sn = $inst->key_pre_singular_name . "array[$def_key]";
@@ -328,12 +324,9 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
 	if ( $has_desc ) {
 		$lab_base_d = esc_html__( 'Description' );
 	}
-	foreach ( \wpinc\plex\get_slug_combination( $inst->vars ) as $slugs ) {
-		$key = implode( '_', $slugs );
-		if ( $key === $def_key ) {
-			continue;
-		}
-		$lab_pf = _get_admin_label( $slugs );
+	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
+	foreach ( $skc as $key => $slugs ) {
+		$lab_pf = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
 		$lab_n  = "$lab_base_n $lab_pf";
 
 		$id_n   = $inst->key_pre_name . $key;
@@ -355,28 +348,6 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
 			_echo_description_field( $lab_d, $id_d, $name_d, $val_d );
 		}
 	}
-}
-
-/**
- * Retrieve the label of current query variables.
- *
- * @access private
- *
- * @param string[] $slugs The slug combination.
- * @return string The label string.
- */
-function _get_admin_label( array $slugs ): string {
-	$inst = _get_instance();
-	$ls   = array_map(
-		function ( $s ) use ( $inst ) {
-			return $inst->slug_to_label[ $s ] ?? $s;
-		},
-		$slugs
-	);
-	if ( $inst->label_format ) {
-		return sprintf( $inst->label_format, ...$ls );
-	}
-	return implode( ' ', $ls );
 }
 
 /**

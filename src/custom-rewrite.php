@@ -68,8 +68,8 @@ function initialize() {
 		add_filter( 'redirect_canonical', '\wpinc\plex\custom_rewrite\_cb_redirect_canonical', 1, 2 );
 	}
 	add_filter( 'page_link', '\wpinc\plex\custom_rewrite\_cb_page_link' );
-	add_filter( 'post_link', '\wpinc\plex\custom_rewrite\_cb_post_link', 10, 2 );
-	add_filter( 'post_type_link', '\wpinc\plex\custom_rewrite\_cb_post_link', 10, 2 );
+	add_filter( 'post_link', '\wpinc\plex\custom_rewrite\_cb_link', 10, 2 );
+	add_filter( 'post_type_link', '\wpinc\plex\custom_rewrite\_cb_link', 10, 2 );
 
 	add_filter( 'post_type_archive_link', '\wpinc\plex\custom_rewrite\_cb_link', 20 );  // Caution!
 	add_filter( 'paginate_links', '\wpinc\plex\custom_rewrite\_cb_link' );
@@ -329,15 +329,12 @@ function _redirect( string $req_path, string $after ) {
 function _extract_vars( string $url ): array {
 	list( $path ) = explode( '?', $url );
 
-	$path = trim( str_replace( \home_url(), '', $path ), '/' );
-	$ps   = explode( '/', $path );
+	$ps   = explode( '/', trim( str_replace( \home_url(), '', $path ), '/' ) );
 	$vars = array();
 	$sps  = array();
-
-	$inst = _get_instance();
 	$p    = array_shift( $ps );
 
-	foreach ( $inst->structures as $st ) {
+	foreach ( _get_instance()->structures as $st ) {
 		if ( in_array( $p, $st['slugs'], true ) ) {
 			$vars[ $st['var'] ] = $p;
 			$sps[]              = $p;
@@ -361,14 +358,11 @@ function _extract_vars( string $url ): array {
 function _extract_query_path( string $url ): string {
 	list( $path ) = explode( '?', $url );
 
-	$path = trim( str_replace( \home_url(), '', $path ), '/' );
-	$ps   = explode( '/', $path );
-	$sps  = array();
+	$ps  = explode( '/', trim( str_replace( \home_url(), '', $path ), '/' ) );
+	$sps = array();
+	$p   = array_shift( $ps );
 
-	$inst = _get_instance();
-	$p    = array_shift( $ps );
-
-	foreach ( $inst->structures as $st ) {
+	foreach ( _get_instance()->structures as $st ) {
 		if ( in_array( $p, $st['slugs'], true ) ) {
 			$sps[] = $p;
 			$p     = array_shift( $ps );
@@ -457,9 +451,9 @@ function _cb_after_setup_theme() {
  * @param string $subject The string being searched and replaced on.
  * @return string A string with the replaced values.
  */
-function _str_replace_one( string $search, string $replace, string $subject ) {
-	$search = preg_quote( $search, '/' );
-	return preg_replace( "/$search/", $replace, $subject, 1 );
+function _str_replace_one( string $search, string $replace, string $subject ): string {
+	$s = preg_quote( $search, '/' );
+	return preg_replace( "/$s/", $replace, $subject, 1 );
 }
 
 /**
@@ -486,7 +480,7 @@ function _cb_request( array $query_vars ): array {
  * @param string $requested_url The requested URL.
  * @return string The redirect URL.
  */
-function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
+function _cb_redirect_canonical( string $redirect_url, string $requested_url ): string {
 	$inst = _get_instance();
 	if ( $inst->is_page_not_found ) {
 		return false;
@@ -517,43 +511,26 @@ function _cb_page_link( string $link ): string {
 }
 
 /**
- * Callback function for 'post_link' filter.
- *
- * @access private
- *
- * @param string   $permalink The post's permalink.
- * @param \WP_Post $post      The post in question.
- * @return string The filtered URL.
- */
-function _cb_post_link( string $permalink, \WP_Post $post ): string {
-	$cur = _extract_query_path( $permalink );
-
-	$inst = _get_instance();
-	foreach ( $inst->post_link_filters as $f ) {
-		$ret = call_user_func( $f, $inst->vars, $post );
-		if ( $ret ) {
-			$inst->vars = $ret;
-		}
-	}
-	$norm = build_norm_path( $inst->vars );
-	if ( $norm !== $cur ) {
-		$permalink = _replace_path( $permalink, $cur, $norm );
-	}
-	return $permalink;
-}
-
-/**
  * Callback function for 'link' filter.
  *
  * @access private
  *
- * @param string $link The permalink.
+ * @param string    $link The permalink.
+ * @param ?\WP_Post $post (When used as 'post_link' filter) The post in question.
  * @return string The filtered URL.
  */
-function _cb_link( string $link ): string {
+function _cb_link( string $link, ?\WP_Post $post = null ): string {
 	$cur = _extract_query_path( $link );
 
 	$inst = _get_instance();
+	if ( $post ) {
+		foreach ( $inst->post_link_filters as $f ) {
+			$ret = call_user_func( $f, $inst->vars, $post );
+			if ( $ret ) {
+				$inst->vars = $ret;
+			}
+		}
+	}
 	$norm = build_norm_path( $inst->vars );
 	if ( $norm !== $cur ) {
 		$link = _replace_path( $link, $cur, $norm );

@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-15
+ * @version 2021-03-19
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -17,41 +17,41 @@ const ADMIN_QUERY_VAR = 'pseudo_front';
 /**
  * Add an array of slug to label.
  *
- * @param array $slug_to_label An array of slug to label.
+ * @param array  $slug_to_label An array of slug to label.
+ * @param string $format        A format to assign.
  */
-function add_admin_labels( array $slug_to_label ) {
+function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
-}
-
-/**
- * Assign a format for displaying admin labels.
- *
- * @param string $format A format to assign.
- */
-function set_admin_label_format( string $format ) {
-	_get_instance()->label_format = $format;
-}
-
-/**
- * Set whether the default front bloginfo is enabled.
- *
- * @param bool $flag Whether the default front bloginfo is enabled.
- */
-function set_default_front_bloginfo_enabled( bool $flag ) {
-	_get_instance()->is_default_front_bloginfo_enabled = $flag;
-	if ( false === $flag ) {
-		$key = \wpinc\plex\get_default_key();
-		delete_option( "blogname_$key" );
-		delete_option( "blogdescription_$key" );
+	if ( $format ) {
+		$inst->label_format = $format;
 	}
 }
 
 /**
  * Initialize the pseudo-front.
+ *
+ * @param array $args {
+ *     Configuration arguments.
+ *
+ *     @type bool $is_default_front_bloginfo_enabled (Optional) Whether the default front bloginfo is enabled.
+ * }
  */
-function initialize() {
+function initialize( array $args = array() ) {
+	$inst = _get_instance();
+
+	$args += array(
+		'is_default_front_bloginfo_enabled' => true,
+	);
+
+	$inst->is_default_front_bloginfo_enabled = $args['is_default_front_bloginfo_enabled'];
+	if ( ! $inst->is_default_front_bloginfo_enabled ) {
+		$key = \wpinc\plex\get_default_key();
+		delete_option( "blogname_$key" );
+		delete_option( "blogdescription_$key" );
+	}
+
 	if ( is_admin() ) {
 		add_action( 'admin_init', '\wpinc\plex\pseudo_front\_cb_admin_init' );
 
@@ -93,32 +93,6 @@ function home_url( string $path = '', ?string $scheme = null, array $vars = arra
 		$path = '/' . ltrim( $path, '/' );
 	}
 	return \home_url( $fp . $path, $scheme );
-}
-
-
-// -----------------------------------------------------------------------------
-
-
-/**
- * Retrieve the label of current query variables.
- *
- * @access private
- *
- * @param string[] $slugs The slug combination.
- * @return string The label string.
- */
-function _get_admin_label( array $slugs ): string {
-	$inst = _get_instance();
-	$ls   = array_map(
-		function ( $s ) use ( $inst ) {
-			return $inst->slug_to_label[ $s ] ?? $s;
-		},
-		$slugs
-	);
-	if ( $inst->label_format ) {
-		return sprintf( $inst->label_format, ...$ls );
-	}
-	return implode( ' ', $ls );
 }
 
 
@@ -224,12 +198,12 @@ function _cb_body_class( array $classes ): array {
  * @access private
  */
 function _cb_admin_init() {
-	$skip_key = _get_instance()->is_default_front_bloginfo_enabled ? '' : \wpinc\plex\get_default_key();
+	$inst     = _get_instance();
+	$skip_key = $inst->is_default_front_bloginfo_enabled ? '' : \wpinc\plex\get_default_key();
 
 	add_settings_section( 'pseudo-front-section', __( 'Sites' ), function () {}, 'general' );
 
-	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
-		$key = implode( '_', $slugs );
+	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
 		if ( $key === $skip_key ) {
 			continue;
 		}
@@ -238,7 +212,7 @@ function _cb_admin_init() {
 		register_setting( 'general', $key_bn );
 		register_setting( 'general', $key_bd );
 
-		$title = esc_html( _get_admin_label( $slugs ) );
+		$title = esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
 		add_settings_field(
 			$key_bn,
 			__( 'Site Title' ) . "<br>$title",
@@ -294,13 +268,13 @@ function _cb_query_vars( array $public_query_vars ): array {
  * @access private
  */
 function _cb_admin_menu() {
-	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
+	$inst = _get_instance();
+
+	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
 		$page = get_page_by_path( implode( '/', $slugs ) );
 		if ( $page ) {
-			$key   = implode( '_', $slugs );
-			$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( _get_admin_label( $slugs ) );
-
-			$slug = add_query_arg( ADMIN_QUERY_VAR, $page->ID, 'edit.php?post_type=page' );
+			$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
+			$slug  = add_query_arg( ADMIN_QUERY_VAR, $page->ID, 'edit.php?post_type=page' );
 			add_pages_page( '', $title, 'edit_pages', $slug );
 		}
 	}
@@ -311,7 +285,7 @@ function _cb_admin_menu() {
  *
  * @access private
  * @global string $pagenow
-
+ *
  * @param \WP_Query $query The WP_Query instance (passed by reference).
  */
 function _cb_parse_query( \WP_Query $query ) {
@@ -382,14 +356,16 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
  * @param \WP_Admin_Bar $wp_admin_bar WP_Admin_Bar instance, passed by reference.
  */
 function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
-	foreach ( \wpinc\plex\get_slug_combination() as $slugs ) {
+	$inst = _get_instance();
+
+	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
 		$path = implode( '/', $slugs );
 		$page = get_page_by_path( $path );
 		if ( $page ) {
 			$node = array(
-				'id'     => 'view-site-' . implode( '-', $slugs ),
+				'id'     => 'view-site-' . str_replace( '_', '-', $key ),
 				'parent' => 'site-name',
-				'title'  => esc_html( _get_admin_label( $slugs ) ),
+				'title'  => esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) ),
 				'href'   => \home_url( $path ),
 			);
 			$wp_admin_bar->add_menu( $node );
