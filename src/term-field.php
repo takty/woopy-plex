@@ -284,11 +284,11 @@ function _cb_taxonomy_description( $value, int $term_id, string $taxonomy, strin
  * @param int    $term_id Term ID.
  */
 function _get_term_field( string $field, int $term_id ) {
-	$term = WP_Term::get_instance( $term_id );
-	if ( is_wp_error( $term ) || ! is_object( $term ) || ! isset( $term->$field ) ) {
+	$t = WP_Term::get_instance( $term_id );
+	if ( is_wp_error( $t ) || ! is_object( $t ) || ! isset( $t->$field ) ) {
 		return '';
 	}
-	return $term->$field;
+	return $t->$field;
 }
 
 
