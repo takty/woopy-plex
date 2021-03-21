@@ -50,10 +50,11 @@ function initialize( array $args = array() ) {
 	$inst->vars = $args['vars'];
 
 	if ( is_admin() ) {
-		add_action( 'admin_init', '\wpinc\plex\pseudo_front\_cb_admin_init' );
+		add_filter( 'admin_head', '\wpinc\plex\option_field\_cb_admin_head' );
+		add_action( 'admin_init', '\wpinc\plex\option_field\_cb_admin_init' );
 	} else {
-		add_filter( 'option_date_format', '\wpinc\plex\pseudo_front\_cb_option_date_format' );
-		add_filter( 'option_time_format', '\wpinc\plex\pseudo_front\_cb_option_time_format' );
+		add_filter( 'option_date_format', '\wpinc\plex\option_field\_cb_option_date_format' );
+		add_filter( 'option_time_format', '\wpinc\plex\option_field\_cb_option_time_format' );
 	}
 }
 
@@ -70,7 +71,8 @@ function initialize( array $args = array() ) {
  * @return string The filtered string.
  */
 function _cb_option_date_format( string $value ): string {
-	$ret = get_option( 'date_format_' . \wpinc\plex\get_query_key() );
+	$inst = _get_instance();
+	$ret  = get_option( 'date_format_' . \wpinc\plex\get_query_key( $inst->vars ) );
 	if ( false === $ret ) {
 		return $value;
 	}
@@ -86,7 +88,8 @@ function _cb_option_date_format( string $value ): string {
  * @return string The filtered string.
  */
 function _cb_option_time_format( string $value ): string {
-	$ret = get_option( 'time_format_' . \wpinc\plex\get_query_key() );
+	$inst = _get_instance();
+	$ret  = get_option( 'time_format_' . \wpinc\plex\get_query_key( $inst->vars ) );
 	if ( false === $ret ) {
 		return $value;
 	}
@@ -98,22 +101,31 @@ function _cb_option_time_format( string $value ): string {
 
 
 /**
+ * Callback function for 'admin_head' hook.
+ *
+ * @access private
+ */
+function _cb_admin_head() {
+	?>
+<style>
+	.wpinc-plex-option-field th { padding-top: 10px; padding-bottom: 10px; }
+</style>
+	<?php
+}
+
+/**
  * Callback function for 'admin_init' action.
  *
  * @access private
  */
 function _cb_admin_init() {
-	$inst    = _get_instance();
-	$def_key = \wpinc\plex\get_default_key();
+	$inst = _get_instance();
 
 	add_settings_section( 'option-field-section', __( 'Sites' ), function () {}, 'general' );
 
-	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
-		if ( $key === $def_key ) {
-			continue;
-		}
+	foreach ( \wpinc\plex\get_slug_key_to_combination( $inst->vars, true ) as $key => $slugs ) {
 		$key_date = "date_format_$key";
-		$key_time = "date_format_$key";
+		$key_time = "time_format_$key";
 		register_setting( 'general', $key_date );
 		register_setting( 'general', $key_time );
 
@@ -122,21 +134,27 @@ function _cb_admin_init() {
 			$key_date,
 			__( 'Date Format' ) . "<br>$lab",
 			function () use ( $key_date ) {
-				\wpinc\plex\pseudo_front\_cb_field_input( $key_date );
+				\wpinc\plex\option_field\_cb_field_input( $key_date );
 			},
 			'general',
 			'option-field-section',
-			array( 'label_for' => $key_date )
+			array(
+				'label_for' => $key_date,
+				'class'     => 'wpinc-plex-option-field',
+			)
 		);
 		add_settings_field(
 			$key_time,
 			__( 'Time Format' ) . "<br>$lab",
 			function () use ( $key_time ) {
-				\wpinc\plex\pseudo_front\_cb_field_input( $key_time );
+				\wpinc\plex\option_field\_cb_field_input( $key_time );
 			},
 			'general',
 			'option-field-section',
-			array( 'label_for' => $key_time )
+			array(
+				'label_for' => $key_time,
+				'class'     => 'wpinc-plex-option-field',
+			)
 		);
 	}
 }
