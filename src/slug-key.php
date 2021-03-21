@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-19
+ * @version 2021-03-21
  */
 
 namespace wpinc\plex;
@@ -175,7 +175,7 @@ function _generate_combination( array $arrays ): array {
  */
 function get_admin_label( array $slugs, array $slug_to_label, ?string $filter = null ): string {
 	$ls = array_map(
-		function ( $s ) {
+		function ( $s ) use ( $slug_to_label ) {
 			return $slug_to_label[ $s ] ?? $s;
 		},
 		$slugs
