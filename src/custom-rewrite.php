@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-20
+ * @version 2021-03-22
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -85,7 +85,7 @@ function initialize() {
  * @param string $value Query variable value.
  */
 function set_query_var( string $var, string $value ) {
-	return _get_instance()->vars[ $var ] = $val;
+	return _get_instance()->vars[ $var ] = $value;
 }
 
 /**
