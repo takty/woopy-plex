@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-20
+ * @version 2021-03-21
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -249,7 +249,8 @@ function _cb_admin_init() {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_bn );
 			},
 			'general',
-			'pseudo-front-section'
+			'pseudo-front-section',
+			array( 'label_for' => $key_bn, 'class' => 'wpinc-plex-pseudo-front-blogname' )
 		);
 		add_settings_field(
 			$key_bd,
@@ -258,7 +259,8 @@ function _cb_admin_init() {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_bd );
 			},
 			'general',
-			'pseudo-front-section'
+			'pseudo-front-section',
+			array( 'label_for' => $key_bd, 'class' => 'wpinc-plex-pseudo-front-blogdescription' )
 		);
 	}
 }
@@ -413,6 +415,14 @@ function _cb_admin_head() {
 	}
 	echo '</style>';
 	// phpcs:enable
+	?>
+<style>
+	.wpinc-plex-pseudo-front-blogname th { padding-bottom: 10px; }
+	.wpinc-plex-pseudo-front-blogname td { padding-bottom: 5px; }
+	.wpinc-plex-pseudo-front-blogdescription th { padding-top: 10px; }
+	.wpinc-plex-pseudo-front-blogdescription td { padding-top: 5px; }
+</style>
+	<?php
 }
 
 
