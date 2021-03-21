@@ -227,13 +227,13 @@ function _cb_body_class( array $classes ): array {
  * @access private
  */
 function _cb_admin_init() {
-	$inst     = _get_instance();
-	$skip_key = $inst->is_default_front_bloginfo_enabled ? '' : \wpinc\plex\get_default_key();
+	$inst    = _get_instance();
+	$def_key = $inst->is_default_front_bloginfo_enabled ? '' : \wpinc\plex\get_default_key();
 
 	add_settings_section( 'pseudo-front-section', __( 'Sites' ), function () {}, 'general' );
 
 	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
-		if ( $key === $skip_key ) {
+		if ( $key === $def_key ) {
 			continue;
 		}
 		$key_bn = "blogname_$key";
@@ -250,7 +250,10 @@ function _cb_admin_init() {
 			},
 			'general',
 			'pseudo-front-section',
-			array( 'label_for' => $key_bn, 'class' => 'wpinc-plex-pseudo-front-blogname' )
+			array(
+				'label_for' => $key_bn,
+				'class'     => 'wpinc-plex-pseudo-front-blogname',
+			)
 		);
 		add_settings_field(
 			$key_bd,
@@ -260,7 +263,10 @@ function _cb_admin_init() {
 			},
 			'general',
 			'pseudo-front-section',
-			array( 'label_for' => $key_bd, 'class' => 'wpinc-plex-pseudo-front-blogdescription' )
+			array(
+				'label_for' => $key_bd,
+				'class'     => 'wpinc-plex-pseudo-front-blogdescription',
+			)
 		);
 	}
 }
