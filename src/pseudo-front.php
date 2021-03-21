@@ -400,7 +400,6 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 	return $post_states;
 }
 
-
 /**
  * Callback function for 'admin_head' hook.
  *
