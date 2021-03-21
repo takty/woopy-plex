@@ -117,10 +117,10 @@ function _cb_admin_init() {
 		register_setting( 'general', $key_date );
 		register_setting( 'general', $key_time );
 
-		$title = esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
+		$lab = esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
 		add_settings_field(
 			$key_date,
-			__( 'Date Format' ) . "<br>$title",
+			__( 'Date Format' ) . "<br>$lab",
 			function () use ( $key_date ) {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_date );
 			},
@@ -130,7 +130,7 @@ function _cb_admin_init() {
 		);
 		add_settings_field(
 			$key_time,
-			__( 'Time Format' ) . "<br>$title",
+			__( 'Time Format' ) . "<br>$lab",
 			function () use ( $key_time ) {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_time );
 			},

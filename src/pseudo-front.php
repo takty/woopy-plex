@@ -241,10 +241,10 @@ function _cb_admin_init() {
 		register_setting( 'general', $key_bn );
 		register_setting( 'general', $key_bd );
 
-		$title = esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
+		$lab = esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
 		add_settings_field(
 			$key_bn,
-			__( 'Site Title' ) . "<br>$title",
+			__( 'Site Title' ) . "<br>$lab",
 			function () use ( $key_bn ) {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_bn );
 			},
@@ -257,7 +257,7 @@ function _cb_admin_init() {
 		);
 		add_settings_field(
 			$key_bd,
-			__( 'Tagline' ) . "<br>$title",
+			__( 'Tagline' ) . "<br>$lab",
 			function () use ( $key_bd ) {
 				\wpinc\plex\pseudo_front\_cb_field_input( $key_bd );
 			},
@@ -310,9 +310,9 @@ function _cb_admin_menu() {
 	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
 		$page = get_page_by_path( implode( '/', $slugs ) );
 		if ( $page ) {
-			$title = __( 'All Pages', 'default' ) . '<br>' . esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
-			$slug  = add_query_arg( ADMIN_QUERY_VAR, $page->ID, EDIT_PAGE_URL );
-			add_pages_page( '', $title, 'edit_pages', $slug );
+			$lab  = __( 'All Pages', 'default' ) . '<br>' . esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
+			$slug = add_query_arg( ADMIN_QUERY_VAR, $page->ID, EDIT_PAGE_URL );
+			add_pages_page( '', $lab, 'edit_pages', $slug );
 		}
 	}
 }
@@ -449,11 +449,11 @@ function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
 		$path = implode( '/', $slugs );
 		$page = get_page_by_path( $path );
 		if ( $page ) {
-			$title = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
-			$node  = array(
+			$lab  = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
+			$node = array(
 				'id'     => 'view-site-' . str_replace( '_', '-', $key ),
 				'parent' => 'site-name',
-				'title'  => esc_html( $title ),
+				'title'  => esc_html( $lab ),
 				'href'   => \home_url( $path ),
 			);
 			$wp_admin_bar->add_menu( $node );
