@@ -488,6 +488,15 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ): 
 	if ( $inst->is_page_not_found ) {
 		return false;
 	}
+	if ( isset( $_SERVER['REQUEST_URI_ORIG'] ) ) {
+		// phpcs:disable
+		$host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'];
+		$url  = ( is_ssl() ? 'https://' : 'http://' ) . $host . $_SERVER['REQUEST_URI_ORIG'];
+		// phpcs:enable
+		if ( $url === $redirect_url ) {
+			return false;  // For avoiding redirect loop.
+		}
+	}
 	return $redirect_url;
 }
 
