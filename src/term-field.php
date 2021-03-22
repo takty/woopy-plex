@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-20
+ * @version 2021-03-22
  */
 
 namespace wpinc\plex\term_field;
@@ -326,10 +326,7 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
 		$id_sn   = $inst->key_pre_singular_name . $def_key;
 		$name_sn = $inst->key_pre_singular_name . "array[$def_key]";
 		$val_sn  = isset( $t_meta[ $id_sn ] ) ? $t_meta[ $id_sn ][0] : '';
-		_echo_name_field( $lab_n . __( ' (Singular Form)' ), $id_sn, $name_sn, $val_sn );
-	}
-	if ( $has_desc ) {
-		$lab_base_d = esc_html__( 'Description' );
+		_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'plex' ), $id_sn, $name_sn, $val_sn );
 	}
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 	foreach ( $skc as $key => $slugs ) {
@@ -345,10 +342,10 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
 			$id_sn   = $inst->key_pre_singular_name . $key;
 			$name_sn = $inst->key_pre_singular_name . "array[$key]";
 			$val_sn  = isset( $t_meta[ $id_sn ] ) ? $t_meta[ $id_sn ][0] : '';
-			_echo_name_field( $lab_n . __( ' (Singular Form)' ), $id_sn, $name_sn, $val_sn, 'padding-top: 6px;' );
+			_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'plex' ), $id_sn, $name_sn, $val_sn, 'padding-top: 6px;' );
 		}
 		if ( $has_desc ) {
-			$lab_d  = "$lab_base_d $lab_pf";
+			$lab_d  = __( 'Description' ) . " $lab_pf";
 			$id_d   = $inst->key_pre_description . $key;
 			$name_d = $inst->key_pre_description . "array[$key]";
 			$val_d  = isset( $t_meta[ $id_d ] ) ? $t_meta[ $id_d ][0] : '';

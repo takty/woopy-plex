@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-21
+ * @version 2021-03-22
  */
 
 namespace wpinc\plex\option_field;
@@ -121,7 +121,7 @@ function _cb_admin_head() {
 function _cb_admin_init() {
 	$inst = _get_instance();
 
-	add_settings_section( 'option-field-section', __( 'Sites' ), function () {}, 'general' );
+	add_settings_section( 'option-field-section', _x( 'Option Fields', 'option field', 'plex' ), function () {}, 'general' );
 
 	foreach ( \wpinc\plex\get_slug_key_to_combination( $inst->vars, true ) as $key => $slugs ) {
 		$key_date = "date_format_$key";
