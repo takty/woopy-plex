@@ -235,22 +235,21 @@ function _cb_get_adjacent_post_where( string $where, bool $in_same_term, $exclud
  * Callback function for 'getarchives_join' filter.
  *
  * @access private
+ * @global $wpdb
  *
  * @param string $sql_join    Portion of SQL query containing the JOIN clause.
  * @param array  $parsed_args An array of default arguments.
  * @return string The filtered clause.
  */
 function _cb_getarchives_join( string $sql_join, array $parsed_args ): string {
-	if ( ! is_main_query() ) {
-		return $sql_join;
-	}
 	$inst = _get_instance();
 	if ( ! in_array( $parsed_args['post_type'], $inst->post_types, true ) ) {
 		return $sql_join;
 	}
 	$tts = _get_term_taxonomy_ids();
 	if ( ! empty( $tts ) ) {
-		$sql_join .= _build_join_term_relationships( count( $tts ), 'wp_posts' );
+		global $wpdb;
+		$sql_join .= _build_join_term_relationships( count( $tts ), $wpdb->posts );
 	}
 	return $sql_join;
 }
@@ -265,9 +264,6 @@ function _cb_getarchives_join( string $sql_join, array $parsed_args ): string {
  * @return string The filtered clause.
  */
 function _cb_getarchives_where( string $sql_where, array $parsed_args ): string {
-	if ( ! is_main_query() ) {
-		return $sql_where;
-	}
 	$inst = _get_instance();
 	if ( ! in_array( $parsed_args['post_type'], $inst->post_types, true ) ) {
 		return $sql_where;
@@ -295,7 +291,7 @@ function _cb_getarchives_where( string $sql_where, array $parsed_args ): string 
  */
 function _cb_posts_join( string $join, \WP_Query $query ): string {
 	$inst = _get_instance();
-	if ( ! is_main_query() || empty( $inst->post_types ) ) {
+	if ( empty( $inst->post_types ) ) {
 		return $join;
 	}
 	$tts = _get_term_taxonomy_ids();
@@ -304,9 +300,9 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 	}
 	global $wpdb;
 	if ( in_array( $query->query_vars['post_type'], $inst->post_types, true ) ) {
-		$join .= _build_join_term_relationships( count( $tts ), 'wp_posts' );
-	} elseif ( is_search() ) {
-		$join .= _build_join_term_relationships( count( $tts ), 'wp_posts', 'LEFT' );
+		$join .= _build_join_term_relationships( count( $tts ), $wpdb->posts );
+	} elseif ( $query->is_search() ) {
+		$join .= _build_join_term_relationships( count( $tts ), $wpdb->posts, 'LEFT' );
 	}
 	return $join;
 }
@@ -323,7 +319,7 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
  */
 function _cb_posts_where( string $where, \WP_Query $query ): string {
 	$inst = _get_instance();
-	if ( ! is_main_query() || empty( $inst->post_types ) ) {
+	if ( empty( $inst->post_types ) ) {
 		return $where;
 	}
 	$tts = _get_term_taxonomy_ids();
@@ -333,7 +329,7 @@ function _cb_posts_where( string $where, \WP_Query $query ): string {
 	global $wpdb;
 	if ( in_array( $query->query_vars['post_type'], $inst->post_types, true ) ) {
 		$where .= ' AND ' . _build_where_term_relationships( $tts );
-	} elseif ( is_search() ) {
+	} elseif ( $query->is_search() ) {
 		$pts = "('" . implode( "', '", $inst->post_types ) . "')";
 
 		$where .= " AND ({$wpdb->posts}.post_type NOT IN $pts";
@@ -353,7 +349,7 @@ function _cb_posts_where( string $where, \WP_Query $query ): string {
  * @return string The filtered clause.
  */
 function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
-	if ( is_main_query() && is_search() ) {
+	if ( $query->is_search() ) {
 		global $wpdb;
 		$g = "{$wpdb->posts}.ID";
 
@@ -445,7 +441,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	} else {
 		$tars = get_terms( $inst->counted_taxonomies, array( 'hide_empty' => false ) );
 	}
-	$pts = "('" . implode( "', '", $inst->post_types ) . "')";
+	$pts = "('" . implode( "', '", array_map( 'esc_sql', $inst->post_types ) ) . "')";
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars );
 
 	global $wpdb;
@@ -466,7 +462,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 				$q  = 'SELECT COUNT(*) FROM wp_posts AS p';
 				$q .= " INNER JOIN $wpdb->term_relationships AS tr ON (p.ID = tr.object_id)";
 				$q .= _build_join_term_relationships( count( $tts ), 'p' );
-				$q .= $wpdb->prepare( " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN %s AND tr.term_taxonomy_id = %d", $pts, $tt_id );
+				$q .= $wpdb->prepare( " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN $pts AND tr.term_taxonomy_id = %d", $tt_id );
 				$q .= ' AND ' . _build_where_term_relationships( $tts );
 				// phpcs:disable
 				$count = (int) $wpdb->get_var( $q );
