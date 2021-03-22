@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-19
+ * @version 2021-03-22
  */
 
 namespace wpinc\plex\extractor;
@@ -353,10 +353,7 @@ function _cb_posts_where( string $where, \WP_Query $query ): string {
  * @return string The filtered clause.
  */
 function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
-	if ( ! is_main_query() ) {
-		return $groupby;
-	}
-	if ( is_search() ) {
+	if ( is_main_query() && is_search() ) {
 		global $wpdb;
 		$g = "{$wpdb->posts}.ID";
 
