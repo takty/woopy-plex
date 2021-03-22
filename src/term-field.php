@@ -109,7 +109,7 @@ function initialize( array $args = array() ) {
 		}
 	} else {
 		foreach ( $inst->taxonomies_description as $tx ) {
-			add_filter( "{$tx}_description", '\wpinc\plex\term_field\_cb_taxonomy_description', 10, 4 );
+			add_filter( "{$tx}_description", '\wpinc\plex\term_field\_cb_taxonomy_description', 10, 3 );
 		}
 	}
 }
@@ -192,11 +192,16 @@ function _cb_get_terms( array $terms ) {
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
 		foreach ( $terms as $t ) {
-			if ( ! ( $t instanceof WP_Term ) ) {
-				$t = get_term( $t );
-			}
+			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
 			if ( in_array( $t->taxonomy, $inst->taxonomies, true ) ) {
-				_replace_term_name( $t, $t->taxonomy, $inst, $key );
+				_replace_name( $t, $t->taxonomy, $inst, $key );
+			}
+		}
+	} else {
+		foreach ( $terms as $t ) {
+			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
+			if ( in_array( $t->taxonomy, $inst->taxonomies_default_singular_name, true ) ) {
+				_add_singular_name( $t, $t->taxonomy, $inst, $key );
 			}
 		}
 	}
@@ -208,17 +213,21 @@ function _cb_get_terms( array $terms ) {
  *
  * @access private
  *
- * @param \WP_Term $term Term object.
+ * @param \WP_Term $t Term object.
  * @return \WP_Term The filtered term.
  */
-function _cb_get_taxonomy( \WP_Term $term ): \WP_Term {
+function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
 	$inst = _get_instance();
 	$key  = \wpinc\plex\get_query_key( $inst->vars );
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
-		_replace_term_name( $term, $term->taxonomy, $inst, $key );
+		_replace_name( $t, $t->taxonomy, $inst, $key );
+	} else {
+		if ( in_array( $t->taxonomy, $inst->taxonomies_default_singular_name, true ) ) {
+			_add_singular_name( $t, $t->taxonomy, $inst, $key );
+		}
 	}
-	return $term;
+	return $t;
 }
 
 /**
@@ -226,24 +235,44 @@ function _cb_get_taxonomy( \WP_Term $term ): \WP_Term {
  *
  * @access private
  *
- * @param \WP_Term $term     Term object.
+ * @param \WP_Term $t        Term object.
  * @param string   $taxonomy The taxonomy slug.
  * @param object   $inst     The instance of plex\term_field.
  * @param string   $key      The key of term metadata.
  */
-function _replace_term_name( \WP_Term $term, string $taxonomy, object $inst, string $key ) {
-	if ( isset( $term->orig_name ) ) {
+function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key ) {
+	if ( isset( $t->orig_name ) ) {
 		return;
 	}
-	$name = get_term_meta( $term->term_id, $inst->key_pre_name . $key, true );
+	$name = get_term_meta( $t->term_id, $inst->key_pre_name . $key, true );
 	$sn   = '';
 	if ( in_array( $taxonomy, $inst->taxonomies_singular_name, true ) ) {
-		$sn = get_term_meta( $term->term_id, $inst->key_pre_singular_name . $key, true );
+		$sn = get_term_meta( $t->term_id, $inst->key_pre_singular_name . $key, true );
+
+		$t->singular_name = empty( $sn ) ? $t->name : $sn;
 	}
 	$ret = empty( $name ) ? $sn : $name;
 	if ( ! empty( $ret ) ) {
-		$term->orig_name = $term->name;
-		$term->name      = $ret;
+		$t->orig_name = $t->name;
+		$t->name      = $ret;
+	}
+}
+
+/**
+ * Add singular name of default key.
+ *
+ * @access private
+ *
+ * @param \WP_Term $t        Term object.
+ * @param string   $taxonomy The taxonomy slug.
+ * @param object   $inst     The instance of plex\term_field.
+ * @param string   $key      The key of term metadata.
+ */
+function _add_singular_name( \WP_Term $t, string $taxonomy, object $inst, string $key ) {
+	if ( ! isset( $t->singular_name ) ) {
+		$sn = get_term_meta( $t->term_id, $inst->key_pre_singular_name . $key, true );
+
+		$t->singular_name = empty( $sn ) ? $t->name : $sn;
 	}
 }
 
@@ -256,13 +285,12 @@ function _replace_term_name( \WP_Term $term, string $taxonomy, object $inst, str
  *
  * @access private
  *
- * @param mixed  $value    Value of the term field.
- * @param int    $term_id  Term ID.
- * @param string $taxonomy Taxonomy slug.
- * @param string $context  Context to retrieve the term field value.
+ * @param mixed  $value   Value of the term field.
+ * @param int    $term_id Term ID.
+ * @param string $context Context to retrieve the term field value.
  * @return mixed Filtered value.
  */
-function _cb_taxonomy_description( $value, int $term_id, string $taxonomy, string $context ) {
+function _cb_taxonomy_description( $value, int $term_id, string $context ) {
 	if ( 'display' !== $context ) {
 		return $value;
 	}
@@ -288,7 +316,7 @@ function _cb_taxonomy_description( $value, int $term_id, string $taxonomy, strin
  * @param int    $term_id Term ID.
  */
 function _get_term_field( string $field, int $term_id ) {
-	$t = WP_Term::get_instance( $term_id );
+	$t = \WP_Term::get_instance( $term_id );
 	if ( is_wp_error( $t ) || ! is_object( $t ) || ! isset( $t->$field ) ) {
 		return '';
 	}
@@ -304,12 +332,12 @@ function _get_term_field( string $field, int $term_id ) {
  *
  * @access private
  *
- * @param \WP_Term $term     Current taxonomy term object.
+ * @param \WP_Term $t        Current taxonomy term object.
  * @param string   $taxonomy Current taxonomy slug.
  */
-function _cb_taxonomy_edit_form_fields( \WP_Term $term, string $taxonomy ) {
+function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ) {
 	$inst   = _get_instance();
-	$t_meta = get_term_meta( $term->term_id );
+	$t_meta = get_term_meta( $t->term_id );
 
 	$def_slugs  = \wpinc\plex\custom_rewrite\get_structures( 'default_slug', $inst->vars );
 	$lab_base_n = esc_html_x( 'Name', 'term name', 'default' );
