@@ -462,9 +462,9 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 				$q  = 'SELECT COUNT(*) FROM wp_posts AS p';
 				$q .= " INNER JOIN $wpdb->term_relationships AS tr ON (p.ID = tr.object_id)";
 				$q .= _build_join_term_relationships( count( $tts ), 'p' );
+				// phpcs:disable
 				$q .= $wpdb->prepare( " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN $pts AND tr.term_taxonomy_id = %d", $tt_id );
 				$q .= ' AND ' . _build_where_term_relationships( $tts );
-				// phpcs:disable
 				$count = (int) $wpdb->get_var( $q );
 				// phpcs:enable
 			}
