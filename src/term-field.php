@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-22
+ * @version 2021-03-23
  */
 
 namespace wpinc\plex\term_field;
@@ -83,16 +83,18 @@ function initialize( array $args = array() ) {
 	$inst = _get_instance();
 
 	$args += array(
-		'vars'                     => array(),
-		'name_key_prefix'          => '_name_',
-		'singular_name_key_prefix' => '_singular_name_',
-		'description_key_prefix'   => '_description_',
+		'vars'                      => array(),
+		'name_key_prefix'           => '_name_',
+		'singular_name_key_prefix'  => '_singular_name_',
+		'description_key_prefix'    => '_description_',
+		'default_singular_name_key' => '_singular_name',
 	);
 
-	$inst->vars                  = $args['vars'];
-	$inst->key_pre_name          = $args['name_key_prefix'];
-	$inst->key_pre_singular_name = $args['singular_name_key_prefix'];
-	$inst->key_pre_description   = $args['description_key_prefix'];
+	$inst->vars                      = $args['vars'];
+	$inst->key_pre_name              = $args['name_key_prefix'];
+	$inst->key_pre_singular_name     = $args['singular_name_key_prefix'];
+	$inst->key_pre_description       = $args['description_key_prefix'];
+	$inst->key_default_singular_name = $args['default_singular_name_key'];
 
 	global $pagenow;
 	if ( ! is_admin() || ( is_admin() && in_array( $pagenow, array( 'post-new.php', 'post.php', 'edit.php' ), true ) ) ) {
@@ -129,7 +131,7 @@ function get_term_name( int $term_id, bool $singular = false, $args = null ) {
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		if ( $singular ) {
-			$sn = get_term_meta( $term_id, $inst->key_pre_singular_name . $key, true );
+			$sn = get_term_meta( $term_id, $inst->key_default_singular_name, true );
 			if ( ! empty( $sn ) ) {
 				$ret = $sn;
 			}
@@ -190,18 +192,18 @@ function _cb_get_terms( array $terms ) {
 	$inst = _get_instance();
 	$key  = \wpinc\plex\get_query_key( $inst->vars );
 
-	if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
+	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		foreach ( $terms as $t ) {
 			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
-			if ( in_array( $t->taxonomy, $inst->taxonomies, true ) ) {
-				_replace_name( $t, $t->taxonomy, $inst, $key );
+			if ( in_array( $t->taxonomy, $inst->taxonomies_default_singular_name, true ) ) {
+				_add_singular_name( $t, $t->taxonomy, $inst );
 			}
 		}
 	} else {
 		foreach ( $terms as $t ) {
 			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
-			if ( in_array( $t->taxonomy, $inst->taxonomies_default_singular_name, true ) ) {
-				_add_singular_name( $t, $t->taxonomy, $inst, $key );
+			if ( in_array( $t->taxonomy, $inst->taxonomies, true ) ) {
+				_replace_name( $t, $t->taxonomy, $inst, $key );
 			}
 		}
 	}
@@ -220,12 +222,12 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
 	$inst = _get_instance();
 	$key  = \wpinc\plex\get_query_key( $inst->vars );
 
-	if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
-		_replace_name( $t, $t->taxonomy, $inst, $key );
-	} else {
+	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		if ( in_array( $t->taxonomy, $inst->taxonomies_default_singular_name, true ) ) {
-			_add_singular_name( $t, $t->taxonomy, $inst, $key );
+			_add_singular_name( $t, $t->taxonomy, $inst );
 		}
+	} else {
+		_replace_name( $t, $t->taxonomy, $inst, $key );
 	}
 	return $t;
 }
@@ -266,11 +268,10 @@ function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key
  * @param \WP_Term $t        Term object.
  * @param string   $taxonomy The taxonomy slug.
  * @param object   $inst     The instance of plex\term_field.
- * @param string   $key      The key of term metadata.
  */
-function _add_singular_name( \WP_Term $t, string $taxonomy, object $inst, string $key ) {
+function _add_singular_name( \WP_Term $t, string $taxonomy, object $inst ) {
 	if ( ! isset( $t->singular_name ) ) {
-		$sn = get_term_meta( $t->term_id, $inst->key_pre_singular_name . $key, true );
+		$sn = get_term_meta( $t->term_id, $inst->key_default_singular_name, true );
 
 		$t->singular_name = empty( $sn ) ? $t->name : $sn;
 	}
@@ -347,14 +348,12 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ) {
 	$has_desc   = in_array( $taxonomy, $inst->taxonomies_description, true );
 
 	if ( $has_def_sn ) {
-		$def_key = \wpinc\plex\get_default_key( $inst->vars );
-		$lab_pf  = \wpinc\plex\get_admin_label( $def_slugs, $inst->slug_to_label, $inst->label_format );
-		$lab_n   = "$lab_base_n $lab_pf";
+		$lab_pf = \wpinc\plex\get_admin_label( $def_slugs, $inst->slug_to_label, $inst->label_format );
+		$lab_n  = "$lab_base_n $lab_pf";
 
-		$id_sn   = $inst->key_pre_singular_name . $def_key;
-		$name_sn = $inst->key_pre_singular_name . "array[$def_key]";
-		$val_sn  = isset( $t_meta[ $id_sn ] ) ? $t_meta[ $id_sn ][0] : '';
-		_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'plex' ), $id_sn, $name_sn, $val_sn );
+		$id_name_sn = $inst->key_default_singular_name;
+		$val_sn     = isset( $t_meta[ $id_sn ] ) ? $t_meta[ $id_sn ][0] : '';
+		_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'plex' ), $id_name_sn, $id_name_sn, $val_sn );
 	}
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 	foreach ( $skc as $key => $slugs ) {
@@ -458,6 +457,9 @@ function _cb_edited_taxonomy( int $term_id ) {
 			_modify_term_meta( $term_id, $inst->key_pre_description . $key, wp_unslash( $val ) );
 		}
 	}
+	if ( isset( $_POST[ $inst->key_default_singular_name ] ) ) {
+		_modify_term_meta( $term_id, $inst->key_default_singular_name, wp_unslash( $_POST[ $inst->key_default_singular_name ] ) );
+	}
 	// phpcs:enable
 }
 
@@ -536,6 +538,13 @@ function _get_instance(): object {
 		 * @var string
 		 */
 		public $key_pre_description = '';
+
+		/**
+		 * The key of term metadata of a singular name.
+		 *
+		 * @var string
+		 */
+		public $key_default_singular_name = '';
 
 		/**
 		 * The taxonomies with custom names.
