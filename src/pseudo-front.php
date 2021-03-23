@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-22
+ * @version 2021-03-23
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -331,7 +331,7 @@ function _cb_submenu_file( ?string $submenu_file, string $parent_file ): ?string
 		global $post;
 		if ( $post ) {
 			$as   = get_post_ancestors( $post );
-			$as[] = intval( $post->ID );
+			$as[] = (int) $post->ID;
 			foreach ( _get_front_page_ids() as $pf_id ) {
 				if ( in_array( $pf_id, $as, true ) ) {
 					$submenu_file = add_query_arg( ADMIN_QUERY_VAR, $pf_id, EDIT_PAGE_URL );
@@ -369,7 +369,7 @@ function _cb_parse_query( \WP_Query $query ) {
 	if ( empty( $page_id ) ) {
 		return;
 	}
-	$page_id = intval( $page_id );
+	$page_id = (int) $page_id;
 	// Must contains the posts with (parent_id === 0)
 	// because of the algorithm of WP_Posts_List_Table->_display_rows_hierarchical().
 	$ids   = array_reverse( get_post_ancestors( $page_id ) );
@@ -402,7 +402,7 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 	unset( $post_states['page_on_front'] );
 
 	$ids = _get_front_page_ids();
-	if ( in_array( intval( $post->ID ), $ids, true ) ) {
+	if ( in_array( (int) $post->ID, $ids, true ) ) {
 		$post_states['page_on_front'] = _x( 'Pseudo Front Page', 'pseudo front', 'plex' );
 	}
 	return $post_states;
