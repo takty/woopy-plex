@@ -444,21 +444,21 @@ function _cb_edited_taxonomy( int $term_id ) {
 	// phpcs:disable
 	if ( isset( $_POST[ $key_name ] ) ) {
 		foreach ( $_POST[ $key_name ] as $key => $val ) {
-			_modify_term_meta( $term_id, $inst->key_pre_name . $key, wp_unslash( $val ) );
+			_modify_term_meta( $term_id, $inst->key_pre_name . $key, $val );
 		}
 	}
 	if ( isset( $_POST[ $key_sn ] ) ) {
 		foreach ( $_POST[ $key_sn ] as $key => $val ) {
-			_modify_term_meta( $term_id, $inst->key_pre_singular_name . $key, wp_unslash( $val ) );
+			_modify_term_meta( $term_id, $inst->key_pre_singular_name . $key, $val );
 		}
 	}
 	if ( isset( $_POST[ $key_desc ] ) ) {
 		foreach ( $_POST[ $key_desc ] as $key => $val ) {
-			_modify_term_meta( $term_id, $inst->key_pre_description . $key, wp_unslash( $val ) );
+			_modify_term_meta( $term_id, $inst->key_pre_description . $key, $val );
 		}
 	}
 	if ( isset( $_POST[ $inst->key_default_singular_name ] ) ) {
-		_modify_term_meta( $term_id, $inst->key_default_singular_name, wp_unslash( $_POST[ $inst->key_default_singular_name ] ) );
+		_modify_term_meta( $term_id, $inst->key_default_singular_name, $_POST[ $inst->key_default_singular_name ] );
 	}
 	// phpcs:enable
 }
