@@ -279,11 +279,8 @@ function _cb_admin_init() {
  * @param string $key The key of the field.
  */
 function _cb_field_input( string $key ) {
-	$_key = esc_attr( $key );
-	$_val = esc_attr( get_option( $key ) );
-	// phpcs:disable
-	echo "<input id=\"$_key\" name=\"$_key\" type=\"text\" value=\"$_val\" class=\"regular-text\">";
-	// phpcs:enable
+	$val = get_option( $key );
+	printf( '<input id="%1$s" name="%1$s" type="text" value="%2$s" class="regular-text">', esc_attr( $key ), esc_attr( $val ) );
 }
 
 /**
