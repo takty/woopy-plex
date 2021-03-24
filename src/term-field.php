@@ -128,7 +128,7 @@ function get_term_name( int $term_id = 0, bool $singular = false, $args = null )
 	list( $term_id, $tx ) = _get_term_id_taxonomy( $term_id );
 
 	$inst = _get_instance();
-	$key  = \wpinc\plex\get_argument_key( $inst->vars );
+	$key  = \wpinc\plex\get_argument_key( $args, $inst->vars );
 	$ret  = '';
 
 	if ( $term_id && in_array( $tx, $inst->txs, true ) ) {
@@ -164,7 +164,7 @@ function term_description( int $term_id = 0, $args = null ) {
 	list( $term_id, $tx ) = _get_term_id_taxonomy( $term_id );
 
 	$inst = _get_instance();
-	$key  = \wpinc\plex\get_argument_key( $inst->vars );
+	$key  = \wpinc\plex\get_argument_key( $args, $inst->vars );
 	$ret  = '';
 
 	if ( $term_id && in_array( $tx, $inst->txs, true ) ) {

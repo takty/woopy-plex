@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-21
+ * @version 2021-03-24
  */
 
 namespace wpinc\plex;
@@ -62,28 +62,28 @@ function get_query_key( ?array $vars = null ): string {
  * @return string The key string.
  */
 function get_argument_key( $args, ?array $vars = null ): string {
-	$inst = _get_instance();
 	if ( is_array( $args ) && ! empty( $args ) ) {
 		$key = implode(
 			'_',
 			array_map(
-				function ( $var ) use ( $args ) {
+				function ( $var ) use ( $args, $vars ) {
 					return $args[ $var ] ?? custom_rewrite\get_query_var( $var );
 				},
-				custom_rewrite\get_structures( 'var', $inst->vars )
+				custom_rewrite\get_structures( 'var', $vars )
 			)
 		);
 		$key = str_replace( '-', '_', $key );
 	} elseif ( is_string( $args ) && ! empty( $args ) ) {
 		$key = str_replace( '-', '_', $args );
 	} else {
-		$key = get_query_key( $inst->vars );
+		$key = get_query_key( $vars );
 	}
 	return $key;
 }
 
 
 // -----------------------------------------------------------------------------
+
 
 /**
  * Generate an array of slug key to slug combinations.
