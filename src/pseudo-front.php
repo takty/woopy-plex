@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-23
+ * @version 2021-03-25
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -396,11 +396,16 @@ function _cb_parse_query( \WP_Query $query ) {
  * @return string[] The filtered states.
  */
 function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
+	$is_real_front = isset( $post_states['page_on_front'] );
 	unset( $post_states['page_on_front'] );
 
 	$ids = _get_front_page_ids();
 	if ( in_array( (int) $post->ID, $ids, true ) ) {
-		$post_states['page_on_front'] = _x( 'Pseudo Front Page', 'pseudo front', 'plex' );
+		if ( $is_real_front ) {
+			$post_states['page_on_front'] = _x( 'Front Page', 'page label' );
+		} else {
+			$post_states['page_on_front'] = _x( 'Pseudo Front Page', 'pseudo front', 'plex' );
+		}
 	}
 	return $post_states;
 }
