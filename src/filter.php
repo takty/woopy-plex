@@ -1,25 +1,25 @@
 <?php
 /**
- * Post Extractor
+ * Post Filter
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-22
+ * @version 2021-03-24
  */
 
-namespace wpinc\plex\extractor;
+namespace wpinc\plex\filter;
 
 require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
- * Register taxonomy used for extraction.
+ * Register taxonomy used for filter.
  *
- * @param string  $taxonomy The taxonomy used for extraction.
+ * @param string  $taxonomy The taxonomy used for filter.
  * @param string  $label    The label of the taxonomy.
  * @param ?string $var      (Optional) The query variable name related to the taxonomy.
  */
-function add_extraction_taxonomy( string $taxonomy, string $label, ?string $var = null ) {
+function add_filter_taxonomy( string $taxonomy, string $label, ?string $var = null ) {
 	$var  = $var ?? $taxonomy;
 	$args = array(
 		'label'             => $label,
@@ -39,11 +39,11 @@ function add_extraction_taxonomy( string $taxonomy, string $label, ?string $var 
 }
 
 /**
- * Add extracted post types.
+ * Add filtered post types.
  *
  * @param array|string $post_type_s A post type or an array of post types.
  */
-function add_extracted_post_type( $post_type_s ) {
+function add_filtered_post_type( $post_type_s ) {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 	foreach ( $pts as $pt ) {
@@ -89,21 +89,21 @@ function initialize( array $args = array() ) {
 	$inst->key_pre_count = $args['count_key_prefix'];
 
 	if ( is_admin() ) {
-		add_action( 'edited_term_taxonomy', '\wpinc\plex\extractor\_cb_edited_term_taxonomy', 10, 2 );
+		add_action( 'edited_term_taxonomy', '\wpinc\plex\filter\_cb_edited_term_taxonomy', 10, 2 );
 	} else {
-		add_filter( 'get_next_post_join', '\wpinc\plex\extractor\_cb_get_adjacent_post_join', 10, 5 );
-		add_filter( 'get_previous_post_join', '\wpinc\plex\extractor\_cb_get_adjacent_post_join', 10, 5 );
-		add_filter( 'get_next_post_where', '\wpinc\plex\extractor\_cb_get_adjacent_post_where', 10, 5 );
-		add_filter( 'get_previous_post_where', '\wpinc\plex\extractor\_cb_get_adjacent_post_where', 10, 5 );
+		add_filter( 'get_next_post_join', '\wpinc\plex\filter\_cb_get_adjacent_post_join', 10, 5 );
+		add_filter( 'get_previous_post_join', '\wpinc\plex\filter\_cb_get_adjacent_post_join', 10, 5 );
+		add_filter( 'get_next_post_where', '\wpinc\plex\filter\_cb_get_adjacent_post_where', 10, 5 );
+		add_filter( 'get_previous_post_where', '\wpinc\plex\filter\_cb_get_adjacent_post_where', 10, 5 );
 
-		add_filter( 'getarchives_join', '\wpinc\plex\extractor\_cb_getarchives_join', 10, 2 );
-		add_filter( 'getarchives_where', '\wpinc\plex\extractor\_cb_getarchives_where', 10, 2 );
+		add_filter( 'getarchives_join', '\wpinc\plex\filter\_cb_getarchives_join', 10, 2 );
+		add_filter( 'getarchives_where', '\wpinc\plex\filter\_cb_getarchives_where', 10, 2 );
 
-		add_action( 'posts_join', '\wpinc\plex\extractor\_cb_posts_join', 10, 2 );
-		add_action( 'posts_where', '\wpinc\plex\extractor\_cb_posts_where', 10, 2 );
-		add_action( 'posts_groupby', '\wpinc\plex\extractor\_cb_posts_groupby', 10, 2 );
+		add_action( 'posts_join', '\wpinc\plex\filter\_cb_posts_join', 10, 2 );
+		add_action( 'posts_where', '\wpinc\plex\filter\_cb_posts_where', 10, 2 );
+		add_action( 'posts_groupby', '\wpinc\plex\filter\_cb_posts_groupby', 10, 2 );
 
-		\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\extractor\_cb_filter_by_taxonomy' );
+		\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\filter\_post_link_filter' );
 	}
 }
 
@@ -377,7 +377,7 @@ function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
  * @param ?\WP_Post $post The post in question.
  * @return array The filtered vars.
  */
-function _cb_filter_by_taxonomy( array $vars, ?\WP_Post $post = null ): array {
+function _post_link_filter( array $vars, ?\WP_Post $post = null ): array {
 	if ( ! is_admin() || ! is_a( $post, 'WP_Post' ) ) {
 		return $vars;
 	}
@@ -505,7 +505,7 @@ function _get_instance(): object {
 		public $var_to_taxonomy = array();
 
 		/**
-		 * The post types.
+		 * The filtered post types.
 		 *
 		 * @var array
 		 */
