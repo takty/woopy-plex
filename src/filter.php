@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-24
+ * @version 2021-03-25
  */
 
 namespace wpinc\plex\filter;
@@ -15,27 +15,54 @@ require_once __DIR__ . '/slug-key.php';
 /**
  * Register taxonomy used for filter.
  *
- * @param string  $taxonomy The taxonomy used for filter.
- * @param string  $label    The label of the taxonomy.
- * @param ?string $var      (Optional) The query variable name related to the taxonomy.
+ * @param string $var  The query variable name related to the taxonomy.
+ * @param array  $args {
+ *     Configuration arguments.
+ *
+ *     @type string $taxonomy          The taxonomy used for filter. Default is the same as $var.
+ *     @type bool   $is_terms_inserted Whether terms are inserted. Default is true.
+ *     @type array  $slug_to_label     An array of slug to label.
+ * }
  */
-function add_filter_taxonomy( string $taxonomy, string $label, ?string $var = null ) {
-	$var  = $var ?? $taxonomy;
-	$args = array(
-		'label'             => $label,
+function add_filter_taxonomy( string $var, array $args = array() ) {
+	$args += array(
+		'taxonomy'          => $var,
+		'is_terms_inserted' => true,
+		'slug_to_label'     => array(),
+
+		'label'             => _x( 'Filter', 'filter', 'plex' ),
 		'show_in_nav_menus' => false,
 		'show_admin_column' => true,
 		'hierarchical'      => true,
 		'query_var'         => false,
 		'rewrite'           => false,
 	);
-	register_taxonomy( $taxonomy, null, $args );
+
+	$tx                = $args['taxonomy'];
+	$is_terms_inserted = $args['is_terms_inserted'];
+	$slug_to_label     = $args['slug_to_label'];
+	unset( $args['taxonomy'] );
+	unset( $args['is_terms_inserted'] );
+	unset( $args['slug_to_label'] );
+
+	register_taxonomy( $tx, null, $args );
+
+	if ( $is_terms_inserted ) {
+		$slugs = \wpinc\plex\get_structures( 'slugs', array( $var ) )[0];
+		foreach ( $slugs as $slug ) {
+			$term = get_term_by( 'slug', $slug, $tx );
+			if ( false === $term ) {
+				$lab = $slug_to_label[ $slug ] ?? ucfirst( $slug );
+				wp_insert_term( $lab, $tx, array( 'slug' => $slug ) );
+			}
+		}
+	}
 	$inst = _get_instance();
 	foreach ( $inst->post_types as $pt ) {
-		register_taxonomy_for_object_type( $taxonomy, $pt );
+		register_taxonomy_for_object_type( $tx, $pt );
 	}
-	$inst->vars[]                  = $var;
-	$inst->var_to_taxonomy[ $var ] = $taxonomy;
+	$inst->vars[]            = $var;
+	$inst->var_to_tx[ $var ] = $tx;
 }
 
 /**
@@ -47,7 +74,7 @@ function add_filtered_post_type( $post_type_s ) {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 	foreach ( $pts as $pt ) {
-		foreach ( $inst->var_to_taxonomy as $tx ) {
+		foreach ( $inst->var_to_tx as $tx ) {
 			register_taxonomy_for_object_type( $tx, $pt );
 		}
 	}
@@ -63,7 +90,7 @@ function add_counted_taxonomy( $taxonomy_s ) {
 	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
 	$inst = _get_instance();
 
-	$inst->counted_taxonomies = array_merge( $inst->counted_taxonomies, $txs );
+	$inst->txs_counted = array_merge( $inst->txs_counted, $txs );
 }
 
 /**
@@ -166,7 +193,7 @@ function _get_term_taxonomy_ids(): array {
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
-		$tx = $inst->var_to_taxonomy[ $var ];
+		$tx = $inst->var_to_tx[ $var ];
 		$t  = get_term_by( 'slug', \wpinc\plex\custom_rewrite\get_query_var( $var ), $tx );
 		if ( $t ) {
 			$ret[] = $t->term_taxonomy_id;
@@ -388,7 +415,7 @@ function _post_link_filter( array $vars, ?\WP_Post $post = null ): array {
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
-		$terms = get_the_terms( $post->ID, $inst->var_to_taxonomy[ $var ] );
+		$terms = get_the_terms( $post->ID, $inst->var_to_tx[ $var ] );
 		if ( ! is_array( $terms ) ) {
 			return $vars;
 		}
@@ -422,24 +449,24 @@ function _post_link_filter( array $vars, ?\WP_Post $post = null ): array {
  */
 function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 	$inst = _get_instance();
-	if ( empty( $inst->counted_taxonomies ) ) {
+	if ( empty( $inst->txs_counted ) ) {
 		return;
 	}
 	$txs = array_map(
 		function ( $var ) use ( $inst ) {
-			return $inst->var_to_taxonomy[ $var ];
+			return $inst->var_to_tx[ $var ];
 		},
 		\wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars )
 	);
 
-	$is_filtered = in_array( $taxonomy, $inst->counted_taxonomies, true );
+	$is_filtered = in_array( $taxonomy, $inst->txs_counted, true );
 	if ( ! $is_filtered && ! in_array( $taxonomy, $txs, true ) ) {
 		return;
 	}
 	if ( $is_filtered ) {
 		$tars = array( $tt_id );
 	} else {
-		$tars = get_terms( $inst->counted_taxonomies, array( 'hide_empty' => false ) );
+		$tars = get_terms( $inst->txs_counted, array( 'hide_empty' => false ) );
 	}
 	$pts = "('" . implode( "', '", array_map( 'esc_sql', $inst->post_types ) ) . "')";
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars );
@@ -502,7 +529,7 @@ function _get_instance(): object {
 		 *
 		 * @var array
 		 */
-		public $var_to_taxonomy = array();
+		public $var_to_tx = array();
 
 		/**
 		 * The filtered post types.
@@ -516,7 +543,7 @@ function _get_instance(): object {
 		 *
 		 * @var array
 		 */
-		public $counted_taxonomies = array();
+		public $txs_counted = array();
 
 		/**
 		 * The key prefix of term count

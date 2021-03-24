@@ -1,7 +1,7 @@
 # Translation of Plex - Development in Japanese
 # @package Wpinc Plex
 # @author Takuto Yanagida
-# @version 2021-03-22
+# @version 2021-03-25
 
 # Pseudo Front -----------------------------------------------------------------
 
@@ -13,13 +13,19 @@ msgctxt "pseudo front"
 msgid "Pseudo Front Pages"
 msgstr "疑似フロントページ"
 
+# Filter -----------------------------------------------------------------------
+
+msgctxt "filter"
+msgid "Filter"
+msgstr "フィルター"
+
 # Option Field -----------------------------------------------------------------
 
 msgctxt "option field"
 msgid "Option Fields"
 msgstr "設定項目"
 
-# Term Field -----------------------------------------------------------------
+# Term Field -------------------------------------------------------------------
 
 msgctxt "term field"
 msgid " (Singular Form)"
