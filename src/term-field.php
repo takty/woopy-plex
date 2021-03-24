@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-23
+ * @version 2021-03-24
  */
 
 namespace wpinc\plex\term_field;
@@ -17,7 +17,7 @@ require_once __DIR__ . '/slug-key.php';
  *
  * @param string|string[] $taxonomy_s Taxonomy slugs.
  * @param array           $args {
- *     Add taxonomy.
+ *     Configuration arguments.
  *
  *     @type bool $has_singular_name         Whether the terms has singular names.
  *     @type bool $has_default_singular_name Whether the default name of the terms has singular form.
