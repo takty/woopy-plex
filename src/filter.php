@@ -48,7 +48,7 @@ function add_filter_taxonomy( string $var, array $args = array() ) {
 	register_taxonomy( $tx, null, $args );
 
 	if ( $is_terms_inserted ) {
-		$slugs = \wpinc\plex\get_structures( 'slugs', array( $var ) )[0];
+		$slugs = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) )[0];
 		foreach ( $slugs as $slug ) {
 			$term = get_term_by( 'slug', $slug, $tx );
 			if ( false === $term ) {
