@@ -117,6 +117,7 @@ function initialize( array $args = array() ) {
 
 	if ( is_admin() ) {
 		add_action( 'edited_term_taxonomy', '\wpinc\plex\filter\_cb_edited_term_taxonomy', 10, 2 );
+		\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\filter\_post_link_filter' );
 	} else {
 		add_filter( 'get_next_post_join', '\wpinc\plex\filter\_cb_get_adjacent_post_join', 10, 5 );
 		add_filter( 'get_previous_post_join', '\wpinc\plex\filter\_cb_get_adjacent_post_join', 10, 5 );
@@ -129,8 +130,6 @@ function initialize( array $args = array() ) {
 		add_action( 'posts_join', '\wpinc\plex\filter\_cb_posts_join', 10, 2 );
 		add_action( 'posts_where', '\wpinc\plex\filter\_cb_posts_where', 10, 2 );
 		add_action( 'posts_groupby', '\wpinc\plex\filter\_cb_posts_groupby', 10, 2 );
-
-		\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\filter\_post_link_filter' );
 	}
 }
 
@@ -400,24 +399,24 @@ function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
  *
  * @access private
  *
- * @param array     $vars The query vars.
- * @param ?\WP_Post $post The post in question.
+ * @param array     $query_vars The query vars.
+ * @param ?\WP_Post $post       The post in question.
  * @return array The filtered vars.
  */
-function _post_link_filter( array $vars, ?\WP_Post $post = null ): array {
+function _post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
 	if ( ! is_admin() || ! is_a( $post, 'WP_Post' ) ) {
-		return $vars;
+		return $query_vars;
 	}
 	$inst = _get_instance();
 	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
-		return $vars;
+		return $query_vars;
 	}
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
 		$terms = get_the_terms( $post->ID, $inst->var_to_tx[ $var ] );
 		if ( ! is_array( $terms ) ) {
-			return $vars;
+			return $query_vars;
 		}
 		$term_slugs = array_map(
 			function ( $t ) {
@@ -425,13 +424,11 @@ function _post_link_filter( array $vars, ?\WP_Post $post = null ): array {
 			},
 			$terms
 		);
-
-		$slug = \wpinc\plex\custom_rewrite\get_query_var( $var );
-		if ( in_array( $slug, $term_slugs, true ) ) {
-			$vars[ $var ] = $slug;
+		if ( ! in_array( $query_vars[ $var ], $term_slugs, true ) ) {
+			$query_vars[ $var ] = $term_slugs[0];
 		}
 	}
-	return $vars;
+	return $query_vars;
 }
 
 
