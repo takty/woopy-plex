@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-25
+ * @version 2021-04-01
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -416,13 +416,11 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
  * @access private
  */
 function _cb_admin_head() {
-	// phpcs:disable
 	echo '<style>';
 	foreach ( _get_front_page_ids() as $id ) {
-		echo "body.post-type-page select#parent_id option[value='$id'] { font-weight: bold; }\n";
+		echo "body.post-type-page select#parent_id option[value='" . esc_attr( $id ) . "']{font-weight:bold;}\n";
 	}
 	echo '</style>';
-	// phpcs:enable
 	?>
 <style>
 	.wpinc-plex-pseudo-front-blogname th { padding-bottom: 10px; }
