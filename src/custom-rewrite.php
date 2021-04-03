@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-22
+ * @version 2021-04-04
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -17,9 +17,9 @@ namespace wpinc\plex\custom_rewrite;
  *
  *     @type string   $var          Name of the variable.
  *     @type string[] $slugs        An array of slugs.
- *     @type string   $default_slug The default slug. Default empty.
- *     @type bool     $is_omittable Whether the variable is omittable. Default false.
- *     @type bool     $is_global    Whether the global variable is assigned. Default false.
+ *     @type string   $default_slug The default slug. Default is empty.
+ *     @type bool     $is_omittable Whether the variable is omittable. Default is false.
+ *     @type bool     $is_global    Whether the global variable is assigned. Default is false.
  * }
  */
 function add_structure( array $args ) {
@@ -92,7 +92,7 @@ function set_query_var( string $var, string $value ) {
  * Retrieves the value of a query variable in the custom rewrite.
  *
  * @param string $var     The variable key to retrieve.
- * @param string $default (Optional) Value to return if the query variable is not set. Default empty.
+ * @param string $default (Optional) Value to return if the query variable is not set. Default is empty.
  * @return string Slugs of the query variable.
  */
 function get_query_var( string $var, string $default = '' ): string {

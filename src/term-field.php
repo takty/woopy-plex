@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-24
+ * @version 2021-04-04
  */
 
 namespace wpinc\plex\term_field;
@@ -17,7 +17,7 @@ require_once __DIR__ . '/slug-key.php';
  *
  * @param string|string[] $taxonomy_s Taxonomy slugs.
  * @param array           $args {
- *     Configuration arguments.
+ *     (Optional) Configuration arguments.
  *
  *     @type bool $has_singular_name         Whether the terms has singular names.
  *     @type bool $has_default_singular_name Whether the default name of the terms has singular form.
@@ -67,12 +67,13 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  * @global string $pagenow
  *
  * @param array $args {
- *     Configuration arguments.
+ *     (Optional) Configuration arguments.
  *
- *     @type array  $vars                     Query variable names.
- *     @type string $name_key_prefix          (Optional) Key prefix of term metadata for custom names.
- *     @type string $singular_name_key_prefix (Optional) Key prefix of term metadata for custom singular names.
- *     @type string $description_key_prefix   (Optional) Key prefix of term metadata for custom description.
+ *     @type array  $vars                      Query variable names.
+ *     @type string $name_key_prefix           Key prefix of term metadata for custom names. Default is '_name_'.
+ *     @type string $singular_name_key_prefix  Key prefix of term metadata for custom singular names. Default is '_singular_name_'.
+ *     @type string $description_key_prefix    Key prefix of term metadata for custom descriptions. Default is '_description_'.
+ *     @type string $default_singular_name_key Key of term metadata for default singular names. Default is '_singular_name'.
  * }
  */
 function initialize( array $args = array() ) {
