@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-04
+ * @version 2021-04-05
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -36,7 +36,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  * @param array $args {
  *     (Optional) Configuration arguments.
  *
- *     @type bool $is_default_front_bloginfo_enabled Whether the default front bloginfo is enabled. Default is true.
+ *     @type bool 'is_default_front_bloginfo_enabled' Whether the default front bloginfo is enabled. Default true.
  * }
  */
 function initialize( array $args = array() ) {
@@ -85,7 +85,7 @@ function initialize( array $args = array() ) {
  * Retrieves the URL for the current site where the front end is accessible.
  *
  * @param string      $path   (Optional) Path relative to the home URL.
- *                            Default is ''.
+ *                            Default ''.
  * @param string|null $scheme (Optional) Scheme to give the home URL context.
  *                            Accepts 'http', 'https', 'relative', 'rest', or null.
  * @param array       $vars   (Optional) An array of variable name to slug.

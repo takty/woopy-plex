@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-04
+ * @version 2021-04-05
  */
 
 namespace wpinc\plex\post_field;
@@ -44,9 +44,9 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  * @param array $args {
  *     (Optional) Configuration arguments.
  *
- *     @type array  $vars               Query variable names.
- *     @type string $title_key_prefix   Key prefix of post metadata for custom title. Default is '_post_title_'.
- *     @type string $content_key_prefix Key prefix of post metadata for custom content. Default is '_post_field_'.
+ *     @type array  'vars'               Query variable names.
+ *     @type string 'title_key_prefix'   Key prefix of post metadata for custom title. Default '_post_title_'.
+ *     @type string 'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_field_'.
  * }
  */
 function initialize( array $args = array() ) {

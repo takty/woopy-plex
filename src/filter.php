@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-04
+ * @version 2021-04-05
  */
 
 namespace wpinc\plex\filter;
@@ -19,9 +19,9 @@ require_once __DIR__ . '/slug-key.php';
  * @param array  $args {
  *     Configuration arguments.
  *
- *     @type string $taxonomy          The taxonomy used for filter. Default is the same as $var.
- *     @type bool   $is_terms_inserted Whether terms are inserted. Default is true.
- *     @type array  $slug_to_label     An array of slug to label.
+ *     @type string 'taxonomy'          The taxonomy used for filter. Default the same as $var.
+ *     @type bool   'is_terms_inserted' Whether terms are inserted. Default true.
+ *     @type array  'slug_to_label'     An array of slug to label.
  * }
  */
 function add_filter_taxonomy( string $var, array $args = array() ) {
@@ -99,7 +99,7 @@ function add_counted_taxonomy( $taxonomy_s ) {
  * @param array $args {
  *     (Optional) Configuration arguments.
  *
- *     @type string $count_key_prefix Key prefix of term count. Default is '_count_'.
+ *     @type string 'count_key_prefix' Key prefix of term count. Default '_count_'.
  * }
  */
 function initialize( array $args = array() ) {
