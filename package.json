@@ -23,7 +23,7 @@
 		"not dead"
 	],
 	"devDependencies": {
-		"@babel/core": "^7.13.10",
+		"@babel/core": "^7.13.14",
 		"@babel/preset-env": "^7.13.12",
 		"gulp": "^4.0.2",
 		"gulp-autoprefixer": "^7.0.1",
