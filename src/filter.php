@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-05
+ * @version 2021-04-06
  */
 
 namespace wpinc\plex\filter;
@@ -176,7 +176,7 @@ function _build_where_term_relationships( array $term_taxonomies ): string {
 }
 
 /**
- * Retrieve term taxonomy ids.
+ * Retrieves term taxonomy ids.
  *
  * @access private
  *

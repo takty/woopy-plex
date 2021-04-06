@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-05
+ * @version 2021-04-06
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -100,7 +100,7 @@ function get_query_var( string $var, string $default = '' ): string {
 }
 
 /**
- * Retrieve rewrite structures.
+ * Retrieves rewrite structures.
  *
  * @param ?string $field (Optional) Field of rewrite structure args.
  * @param ?array  $vars  (Optional) Variable names for filtering.
@@ -124,7 +124,7 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
 }
 
 /**
- * Retrieve invalid pagename.
+ * Retrieves invalid pagename.
  *
  * @return ?array Invalid pagename.
  */

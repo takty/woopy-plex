@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-03-24
+ * @version 2021-04-06
  */
 
 namespace wpinc\plex;
@@ -12,7 +12,7 @@ namespace wpinc\plex;
 require_once __DIR__ . '/custom-rewrite.php';
 
 /**
- * Retrieve the key of default query variables.
+ * Retrieves the key of default query variables.
  *
  * @param ?array $vars (Optional) Variable names for filtering.
  * @return string The key string.
@@ -29,7 +29,7 @@ function get_default_key( ?array $vars = null ): string {
 }
 
 /**
- * Retrieve the key of current query variables.
+ * Retrieves the key of current query variables.
  *
  * @param ?array $vars (Optional) Variable names for filtering.
  * @return string The key string.
@@ -55,7 +55,7 @@ function get_query_key( ?array $vars = null ): string {
 }
 
 /**
- * Retrieve the key of argument variables.
+ * Retrieves the key of argument variables.
  *
  * @param mixed  $args An array of variable name to slugs.
  * @param ?array $vars (Optional) Variable names for filtering.
@@ -164,7 +164,7 @@ function _generate_combination( array $arrays ): array {
 
 
 /**
- * Retrieve the label of current query variables.
+ * Retrieves the label of current query variables.
  *
  * @access private
  *
