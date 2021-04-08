@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-06
+ * @version 2021-04-08
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -312,6 +312,11 @@ function _cb_after_setup_theme() {
 				}
 			}
 		}
+	} elseif ( _has_feed_query() ) {
+		if ( $cur !== $norm ) {
+			_redirect( $req, $ideal );
+		}
+		_replace_request( $req, $added );
 	} else {
 		if ( $cur !== $norm ) {
 			_redirect( $req, $ideal );
@@ -395,7 +400,7 @@ function _str_replace_one( string $search, string $replace, string $subject ): s
 }
 
 /**
- * Whether the request is for page.
+ * Determines whether the request is for page.
  *
  * @access private
  * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
@@ -426,6 +431,28 @@ function _is_page_request( string $req_path, string $req_file ): array {
 		}
 	}
 	return array( false, null );
+}
+
+/**
+ * Determines whether the request has feed query.
+ *
+ * @access private
+ *
+ * @return bool True if the request has feed query.
+ */
+function _has_feed_query(): bool {
+	$query = $_SERVER['QUERY_STRING'] ?? '';  // phpcs:ignore
+	$parts = explode( '&', $query );
+	foreach ( $parts as $part ) {
+		if ( 'feed' === $part ) {
+			return true;
+		}
+		$kv = explode( '=', $part );
+		if ( ! empty( $kv[0] ) && 'feed' === $kv[0] ) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
