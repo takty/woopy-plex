@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-08
+ * @version 2021-04-12
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -18,8 +18,8 @@ namespace wpinc\plex\custom_rewrite;
  *     @type string   'var'          Name of the variable.
  *     @type string[] 'slugs'        An array of slugs.
  *     @type string   'default_slug' The default slug. Default empty.
- *     @type bool     'is_omittable' Whether the variable is omittable. Default false.
- *     @type bool     'is_global'    Whether the global variable is assigned. Default false.
+ *     @type bool     'omittable'    Whether the variable is omittable. Default false.
+ *     @type bool     'global'       Whether the global variable is assigned. Default false.
  * }
  */
 function add_structure( array $args ) {
@@ -27,8 +27,8 @@ function add_structure( array $args ) {
 		'var'          => '',
 		'slugs'        => array(),
 		'default_slug' => '',
-		'is_omittable' => false,
-		'is_global'    => false,
+		'omittable'    => false,
+		'global'       => false,
 	);
 	if ( empty( $args['var'] ) || empty( $args['slugs'] ) ) {
 		wp_die( '$args[\'var\'] and $args[\'slugs\'] must be assigned' );
@@ -36,7 +36,7 @@ function add_structure( array $args ) {
 	if ( ! in_array( $args['default_slug'], $args['slugs'], true ) ) {
 		wp_die( '$args[\'default_slug\'] must be an element of $args[\'slugs\']' );
 	}
-	if ( $args['is_omittable'] && empty( $args['default_slug'] ) ) {
+	if ( $args['omittable'] && empty( $args['default_slug'] ) ) {
 		$args['default_slug'] = $args['slugs'][0];
 	}
 	_get_instance()->structures[] = $args;
@@ -163,7 +163,7 @@ function build_norm_path( array $vars = array() ): string {
 	$vars += $inst->vars;
 	foreach ( $inst->structures as $st ) {
 		$v = empty( $vars[ $st['var'] ] ) ? $st['default_slug'] : $vars[ $st['var'] ];
-		if ( ! $st['is_omittable'] || $v !== $st['default_slug'] ) {
+		if ( ! $st['omittable'] || $v !== $st['default_slug'] ) {
 			$ps[] = $v;
 		}
 	}
@@ -234,7 +234,7 @@ function _extract_vars( string $url ): array {
 
 			$p = array_shift( $ps );
 		} else {
-			$vars[ $st['var'] ] = $st['is_omittable'] ? $st['default_slug'] : null;
+			$vars[ $st['var'] ] = $st['omittable'] ? $st['default_slug'] : null;
 		}
 	}
 	return array( $vars, implode( '/', $sps ) );
@@ -378,7 +378,7 @@ function _parse_request(): array {
 function _register_globals() {
 	$inst = _get_instance();
 	foreach ( $inst->structures as $st ) {
-		if ( $st['is_global'] ) {
+		if ( $st['global'] ) {
 			$GLOBALS[ $st['var'] ] = $inst->vars[ $st['var'] ];
 		}
 	}

@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-05
+ * @version 2021-04-12
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -36,7 +36,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  * @param array $args {
  *     (Optional) Configuration arguments.
  *
- *     @type bool 'is_default_front_bloginfo_enabled' Whether the default front bloginfo is enabled. Default true.
+ *     @type bool 'has_default_front_bloginfo' Whether the site has the default front bloginfo. Default true.
  * }
  */
 function initialize( array $args = array() ) {
@@ -47,11 +47,11 @@ function initialize( array $args = array() ) {
 	$inst = _get_instance();
 
 	$args += array(
-		'is_default_front_bloginfo_enabled' => true,
+		'has_default_front_bloginfo' => true,
 	);
 
-	$inst->is_default_front_bloginfo_enabled = $args['is_default_front_bloginfo_enabled'];
-	if ( ! $inst->is_default_front_bloginfo_enabled ) {
+	$inst->has_default_front_bloginfo = $args['has_default_front_bloginfo'];
+	if ( ! $inst->has_default_front_bloginfo ) {
 		$key = \wpinc\plex\get_default_key();
 		delete_option( "blogname_$key" );
 		delete_option( "blogdescription_$key" );
@@ -228,7 +228,7 @@ function _cb_body_class( array $classes ): array {
  */
 function _cb_admin_init() {
 	$inst    = _get_instance();
-	$def_key = $inst->is_default_front_bloginfo_enabled ? '' : \wpinc\plex\get_default_key();
+	$def_key = $inst->has_default_front_bloginfo ? '' : \wpinc\plex\get_default_key();
 
 	add_settings_section( 'pseudo-front-section', _x( 'Pseudo Front Pages', 'pseudo front', 'plex' ), function () {}, 'general' );
 
@@ -493,11 +493,11 @@ function _get_instance(): object {
 		public $label_format = '';
 
 		/**
-		 * Whether the default front bloginfo is enabled.
+		 * Whether the site has the default front bloginfo.
 		 *
 		 * @var bool
 		 */
-		public $is_default_front_bloginfo_enabled = true;
+		public $has_default_front_bloginfo = true;
 
 		/**
 		 * Whether redirect is suppressed.

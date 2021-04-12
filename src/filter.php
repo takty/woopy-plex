@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-06
+ * @version 2021-04-12
  */
 
 namespace wpinc\plex\filter;
@@ -19,15 +19,15 @@ require_once __DIR__ . '/slug-key.php';
  * @param array  $args {
  *     Configuration arguments.
  *
- *     @type string 'taxonomy'          The taxonomy used for filter. Default the same as $var.
- *     @type bool   'is_terms_inserted' Whether terms are inserted. Default true.
- *     @type array  'slug_to_label'     An array of slug to label.
+ *     @type string 'taxonomy'        The taxonomy used for filter. Default the same as $var.
+ *     @type bool   'do_insert_terms' Whether terms are inserted. Default true.
+ *     @type array  'slug_to_label'   An array of slug to label.
  * }
  */
 function add_filter_taxonomy( string $var, array $args = array() ) {
 	$args += array(
 		'taxonomy'          => $var,
-		'is_terms_inserted' => true,
+		'do_insert_terms'   => true,
 		'slug_to_label'     => array(),
 
 		'label'             => _x( 'Filter', 'filter', 'plex' ),
@@ -38,16 +38,16 @@ function add_filter_taxonomy( string $var, array $args = array() ) {
 		'rewrite'           => false,
 	);
 
-	$tx                = $args['taxonomy'];
-	$is_terms_inserted = $args['is_terms_inserted'];
-	$slug_to_label     = $args['slug_to_label'];
+	$tx              = $args['taxonomy'];
+	$do_insert_terms = $args['do_insert_terms'];
+	$slug_to_label   = $args['slug_to_label'];
 	unset( $args['taxonomy'] );
-	unset( $args['is_terms_inserted'] );
+	unset( $args['do_insert_terms'] );
 	unset( $args['slug_to_label'] );
 
 	register_taxonomy( $tx, null, $args );
 
-	if ( $is_terms_inserted ) {
+	if ( $do_insert_terms ) {
 		$slugs = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) )[0];
 		foreach ( $slugs as $slug ) {
 			$term = get_term_by( 'slug', $slug, $tx );
