@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-12
+ * @version 2021-04-13
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -16,7 +16,7 @@ const ADMIN_QUERY_VAR = 'pseudo_front';
 const EDIT_PAGE_URL   = 'edit.php?post_type=page';
 
 /**
- * Add an array of slug to label.
+ * Adds an array of slug to label.
  *
  * @param array  $slug_to_label An array of slug to label.
  * @param string $format        A format to assign.
@@ -31,7 +31,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 }
 
 /**
- * Initialize the pseudo-front.
+ * Initializes the pseudo-front.
  *
  * @param array $args {
  *     (Optional) Configuration arguments.
@@ -466,7 +466,7 @@ function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
 
 
 /**
- * Get instance.
+ * Gets instance.
  *
  * @access private
  *

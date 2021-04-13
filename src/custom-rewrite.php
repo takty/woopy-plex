@@ -4,13 +4,13 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-12
+ * @version 2021-04-13
  */
 
 namespace wpinc\plex\custom_rewrite;
 
 /**
- * Add a rewrite structure.
+ * Adds a rewrite structure.
  *
  * @param array $args {
  *     Rewrite structure arguments.
@@ -43,7 +43,7 @@ function add_structure( array $args ) {
 }
 
 /**
- * Add a post link filter.
+ * Adds a post link filter.
  *
  * @param callable $callback Callable for post link filter.
  */
@@ -52,7 +52,7 @@ function add_post_link_filter( callable $callback ) {
 }
 
 /**
- * Initialize the custom rewrite.
+ * Initializes the custom rewrite.
  */
 function initialize() {
 	static $initialized = 0;
@@ -133,7 +133,7 @@ function get_invalid_pagename(): ?array {
 }
 
 /**
- * Build a full path.
+ * Builds a full path.
  *
  * @param string[] $vars (Optional) An array of variable name to slug.
  * @return string The full path.
@@ -151,7 +151,7 @@ function build_full_path( array $vars = array() ): string {
 }
 
 /**
- * Build a normalized path.
+ * Builds a normalized path.
  *
  * @param string[] $vars (Optional) An array of variable name to slug.
  * @return string The normalized path.
@@ -175,7 +175,7 @@ function build_norm_path( array $vars = array() ): string {
 
 
 /**
- * Replace path.
+ * Replaces path.
  *
  * @access private
  *
@@ -212,7 +212,7 @@ function _replace_path( string $url, string $before, string $after ): string {
 }
 
 /**
- * Extract variable slugs from URL.
+ * Extracts variable slugs from URL.
  *
  * @access private
  *
@@ -241,7 +241,7 @@ function _extract_vars( string $url ): array {
 }
 
 /**
- * Extract query path from URL.
+ * Extracts query path from URL.
  *
  * @access private
  *
@@ -326,7 +326,7 @@ function _cb_after_setup_theme() {
 }
 
 /**
- * Parse request to find query.
+ * Parses request to find query.
  *
  * @access private
  * @see WP::parse_request()
@@ -371,7 +371,7 @@ function _parse_request(): array {
 }
 
 /**
- * Set up the global variables.
+ * Sets up the global variables.
  *
  * @access private
  */
@@ -385,7 +385,7 @@ function _register_globals() {
 }
 
 /**
- * Replace one occurrence of the search string with the replacement string.
+ * Replaces one occurrence of the search string with the replacement string.
  *
  * @access private
  *
@@ -456,7 +456,7 @@ function _has_feed_query(): bool {
 }
 
 /**
- * Redirect.
+ * Redirects.
  *
  * @access private
  *
@@ -472,7 +472,7 @@ function _redirect( string $req_path, string $after ) {
 }
 
 /**
- * Replace request.
+ * Replaces request.
  *
  * @access private
  *
@@ -581,7 +581,7 @@ function _cb_link( string $link, ?\WP_Post $post = null ): string {
 
 
 /**
- * Get instance.
+ * Gets instance.
  *
  * @access private
  *

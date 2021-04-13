@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-12
+ * @version 2021-04-13
  */
 
 namespace wpinc\plex\filter;
@@ -13,7 +13,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
- * Register taxonomy used for filter.
+ * Registers taxonomy used for filter.
  *
  * @param string $var  The query variable name related to the taxonomy.
  * @param array  $args {
@@ -66,7 +66,7 @@ function add_filter_taxonomy( string $var, array $args = array() ) {
 }
 
 /**
- * Add filtered post types.
+ * Adds filtered post types.
  *
  * @param array|string $post_type_s A post type or an array of post types.
  */
@@ -82,7 +82,7 @@ function add_filtered_post_type( $post_type_s ) {
 }
 
 /**
- * Add counted taxonomies.
+ * Adds counted taxonomies.
  *
  * @param array|string $taxonomy_s A taxonomy or an array of taxonomies.
  */
@@ -94,7 +94,7 @@ function add_counted_taxonomy( $taxonomy_s ) {
 }
 
 /**
- * Initialize the post filter.
+ * Initializes the post filter.
  *
  * @param array $args {
  *     (Optional) Configuration arguments.
@@ -138,7 +138,7 @@ function initialize( array $args = array() ) {
 
 
 /**
- * Build term relationships for JOIN clause.
+ * Builds term relationships for JOIN clause.
  *
  * @access private
  * @global $wpdb;
@@ -158,7 +158,7 @@ function _build_join_term_relationships( int $count, string $wp_posts, string $t
 }
 
 /**
- * Build term relationships for WHERE clause.
+ * Builds term relationships for WHERE clause.
  *
  * @access private
  * @global $wpdb;
@@ -507,7 +507,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
 
 
 /**
- * Get instance.
+ * Gets instance.
  *
  * @access private
  *

@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-05
+ * @version 2021-04-13
  */
 
 namespace wpinc\plex\option_field;
@@ -13,7 +13,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
- * Add an array of slug to label.
+ * Adds an array of slug to label.
  *
  * @param array  $slug_to_label An array of slug to label.
  * @param string $format        A format to assign.
@@ -28,7 +28,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 }
 
 /**
- * Initialize the option fields.
+ * Initializes the option fields.
  *
  * @param array $args {
  *     (Optional) Configuration arguments.
@@ -179,7 +179,7 @@ function _cb_field_input( string $key ) {
 
 
 /**
- * Get instance.
+ * Gets instance.
  *
  * @access private
  *

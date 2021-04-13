@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-06
+ * @version 2021-04-13
  */
 
 namespace wpinc\plex;
@@ -86,7 +86,7 @@ function get_argument_key( $args, ?array $vars = null ): string {
 
 
 /**
- * Generate an array of slug key to slug combinations.
+ * Generates an array of slug key to slug combinations.
  *
  * @param ?array $vars               (Optional) Variable names for filtering.
  * @param bool   $is_default_omitted (Optional) Whether the default key is omitted.
@@ -108,7 +108,7 @@ function get_slug_key_to_combination( ?array $vars = null, bool $is_default_omit
 }
 
 /**
- * Generate slug combinations.
+ * Generates slug combinations.
  *
  * @param ?array $vars (Optional) Variable names for filtering.
  * @return array The array of slug combinations.
@@ -130,7 +130,7 @@ function get_slug_combination( ?array $vars = null ): array {
 
 
 /**
- * Generate combinations of given strings.
+ * Generates combinations of given strings.
  *
  * @access private
  *

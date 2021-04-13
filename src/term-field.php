@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-05
+ * @version 2021-04-13
  */
 
 namespace wpinc\plex\term_field;
@@ -13,7 +13,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
- * Add taxonomy
+ * Adds taxonomy
  *
  * @param string|string[] $taxonomy_s Taxonomy slugs.
  * @param array           $args {
@@ -47,7 +47,7 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
 }
 
 /**
- * Add an array of slug to label.
+ * Adds an array of slug to label.
  *
  * @param array  $slug_to_label An array of slug to label.
  * @param string $format        A format to assign.
@@ -62,7 +62,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 }
 
 /**
- * Initialize the term name.
+ * Initializes the term name.
  *
  * @global string $pagenow
  *
@@ -258,7 +258,7 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
 }
 
 /**
- * Replace the name field of terms.
+ * Replaces the name field of terms.
  *
  * @access private
  *
@@ -286,7 +286,7 @@ function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key
 }
 
 /**
- * Add singular name of default key.
+ * Adds singular name of default key.
  *
  * @access private
  *
@@ -334,7 +334,7 @@ function _cb_taxonomy_description( $value, int $term_id, string $context ) {
 }
 
 /**
- * Get Term field.
+ * Gets Term field.
  *
  * @access private
  *
@@ -510,7 +510,7 @@ function _modify_term_meta( int $term_id, string $key, $val ) {
 
 
 /**
- * Get instance.
+ * Gets instance.
  *
  * @access private
  *
