@@ -1,7 +1,7 @@
 {
 	"name": "wpinc-plex",
 	"version": "0.1.0",
-	"description": "The Plug-in of WordPress for Multi-Plexer",
+	"description": "A Library of WordPress for Multi-Plexer",
 	"author": "Takuto Yanagida",
 	"main": "gulpfile.js",
 	"scripts": {
