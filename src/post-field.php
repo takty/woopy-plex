@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-13
+ * @version 2021-04-15
  */
 
 namespace wpinc\plex\post_field;
@@ -39,7 +39,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 }
 
 /**
- * Initializes the post content.
+ * Activates the post content.
  *
  * @param array $args {
  *     (Optional) Configuration arguments.
@@ -49,9 +49,9 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type string 'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_field_'.
  * }
  */
-function initialize( array $args = array() ) {
-	static $initialized = 0;
-	if ( $initialized++ ) {
+function activate( array $args = array() ) {
+	static $activated = 0;
+	if ( $activated++ ) {
 		return;
 	}
 	$inst = _get_instance();

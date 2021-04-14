@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-13
+ * @version 2021-04-15
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -52,11 +52,11 @@ function add_post_link_filter( callable $callback ) {
 }
 
 /**
- * Initializes the custom rewrite.
+ * Activates the custom rewrite.
  */
-function initialize() {
-	static $initialized = 0;
-	if ( $initialized++ ) {
+function activate() {
+	static $activated = 0;
+	if ( $activated++ ) {
 		return;
 	}
 	if ( ! is_admin() ) {

@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-13
+ * @version 2021-04-15
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -31,7 +31,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 }
 
 /**
- * Initializes the pseudo-front.
+ * Activates the pseudo-front.
  *
  * @param array $args {
  *     (Optional) Configuration arguments.
@@ -39,9 +39,9 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type bool 'has_default_front_bloginfo' Whether the site has the default front bloginfo. Default true.
  * }
  */
-function initialize( array $args = array() ) {
-	static $initialized = 0;
-	if ( $initialized++ ) {
+function activate( array $args = array() ) {
+	static $activated = 0;
+	if ( $activated++ ) {
 		return;
 	}
 	$inst = _get_instance();

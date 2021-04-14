@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-13
+ * @version 2021-04-15
  */
 
 namespace wpinc\plex\term_field;
@@ -62,7 +62,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 }
 
 /**
- * Initializes the term name.
+ * Activates the term name.
  *
  * @global string $pagenow
  *
@@ -76,9 +76,9 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type string 'default_singular_name_key' Key of term metadata for default singular names. Default '_singular_name'.
  * }
  */
-function initialize( array $args = array() ) {
-	static $initialized = 0;
-	if ( $initialized++ ) {
+function activate( array $args = array() ) {
+	static $activated = 0;
+	if ( $activated++ ) {
 		return;
 	}
 	$inst = _get_instance();

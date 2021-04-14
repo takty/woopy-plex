@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-13
+ * @version 2021-04-15
  */
 
 namespace wpinc\plex\filter;
@@ -94,7 +94,7 @@ function add_counted_taxonomy( $taxonomy_s ) {
 }
 
 /**
- * Initializes the post filter.
+ * Activates the post filter.
  *
  * @param array $args {
  *     (Optional) Configuration arguments.
@@ -102,9 +102,9 @@ function add_counted_taxonomy( $taxonomy_s ) {
  *     @type string 'count_key_prefix' Key prefix of term count. Default '_count_'.
  * }
  */
-function initialize( array $args = array() ) {
-	static $initialized = 0;
-	if ( $initialized++ ) {
+function activate( array $args = array() ) {
+	static $activated = 0;
+	if ( $activated++ ) {
 		return;
 	}
 	$inst = _get_instance();

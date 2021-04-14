@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-13
+ * @version 2021-04-15
  */
 
 namespace wpinc\plex\option_field;
@@ -28,7 +28,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
 }
 
 /**
- * Initializes the option fields.
+ * Activates the option fields.
  *
  * @param array $args {
  *     (Optional) Configuration arguments.
@@ -36,9 +36,9 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type array 'vars' Query variable names.
  * }
  */
-function initialize( array $args = array() ) {
-	static $initialized = 0;
-	if ( $initialized++ ) {
+function activate( array $args = array() ) {
+	static $activated = 0;
+	if ( $activated++ ) {
 		return;
 	}
 	$inst = _get_instance();
