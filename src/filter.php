@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-15
+ * @version 2022-01-10
  */
 
 namespace wpinc\plex\filter;
@@ -33,6 +33,7 @@ function add_filter_taxonomy( string $var, array $args = array() ) {
 		'label'             => _x( 'Filter', 'filter', 'plex' ),
 		'show_in_nav_menus' => false,
 		'show_admin_column' => true,
+		'show_in_rest'      => true,  // For Gutenberg.
 		'hierarchical'      => true,
 		'query_var'         => false,
 		'rewrite'           => false,
