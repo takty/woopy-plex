@@ -13,7 +13,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
- * Adds taxonomy
+ * Adds taxonomy.
  *
  * @param string|string[] $taxonomy_s Taxonomy slugs.
  * @param array           $args {
