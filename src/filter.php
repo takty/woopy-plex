@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-01-10
+ * @version 2022-01-16
  */
 
 namespace wpinc\plex\filter;
@@ -400,8 +400,8 @@ function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
  *
  * @access private
  *
- * @param array     $query_vars The query vars.
- * @param ?\WP_Post $post       The post in question.
+ * @param array         $query_vars The query vars.
+ * @param \WP_Post|null $post       The post in question.
  * @return array The filtered vars.
  */
 function _post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {

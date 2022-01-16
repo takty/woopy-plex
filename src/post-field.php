@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-15
+ * @version 2022-01-16
  */
 
 namespace wpinc\plex\post_field;
@@ -114,9 +114,9 @@ function _cb_the_title( string $title, int $id ): string {
  *
  * @access private
  *
- * @param string    $title The post title.
- * @param int       $id    The post ID.
- * @param ?\WP_Post $post  The post.
+ * @param string        $title The post title.
+ * @param int           $id    The post ID.
+ * @param \WP_Post|null $post  The post.
  * @return string Filtered title.
  */
 function _get_title( string $title, int $id, ?\WP_Post $post ): string {

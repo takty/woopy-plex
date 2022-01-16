@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-13
+ * @version 2022-01-16
  */
 
 namespace wpinc\plex;
@@ -14,7 +14,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 /**
  * Retrieves the key of default query variables.
  *
- * @param ?array $vars (Optional) Variable names for filtering.
+ * @param array|null $vars (Optional) Variable names for filtering.
  * @return string The key string.
  */
 function get_default_key( ?array $vars = null ): string {
@@ -31,7 +31,7 @@ function get_default_key( ?array $vars = null ): string {
 /**
  * Retrieves the key of current query variables.
  *
- * @param ?array $vars (Optional) Variable names for filtering.
+ * @param array|null $vars (Optional) Variable names for filtering.
  * @return string The key string.
  */
 function get_query_key( ?array $vars = null ): string {
@@ -57,8 +57,8 @@ function get_query_key( ?array $vars = null ): string {
 /**
  * Retrieves the key of argument variables.
  *
- * @param mixed  $args An array of variable name to slugs.
- * @param ?array $vars (Optional) Variable names for filtering.
+ * @param mixed      $args An array of variable name to slugs.
+ * @param array|null $vars (Optional) Variable names for filtering.
  * @return string The key string.
  */
 function get_argument_key( $args, ?array $vars = null ): string {
@@ -88,8 +88,8 @@ function get_argument_key( $args, ?array $vars = null ): string {
 /**
  * Generates an array of slug key to slug combinations.
  *
- * @param ?array $vars               (Optional) Variable names for filtering.
- * @param bool   $is_default_omitted (Optional) Whether the default key is omitted.
+ * @param array|null $vars               (Optional) Variable names for filtering.
+ * @param bool       $is_default_omitted (Optional) Whether the default key is omitted.
  * @return array The array of slug key to slug combinations.
  */
 function get_slug_key_to_combination( ?array $vars = null, bool $is_default_omitted = false ): array {
@@ -110,7 +110,7 @@ function get_slug_key_to_combination( ?array $vars = null, bool $is_default_omit
 /**
  * Generates slug combinations.
  *
- * @param ?array $vars (Optional) Variable names for filtering.
+ * @param array|null $vars (Optional) Variable names for filtering.
  * @return array The array of slug combinations.
  */
 function get_slug_combination( ?array $vars = null ): array {
@@ -168,9 +168,9 @@ function _generate_combination( array $arrays ): array {
  *
  * @access private
  *
- * @param string[] $slugs         The slug combination.
- * @param array    $slug_to_label The array of slug to label.
- * @param ?string  $filter        The label format.
+ * @param string[]    $slugs         The slug combination.
+ * @param array       $slug_to_label The array of slug to label.
+ * @param string|null $filter        The label format.
  * @return string The label string.
  */
 function get_admin_label( array $slugs, array $slug_to_label, ?string $filter = null ): string {

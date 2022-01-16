@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-15
+ * @version 2022-01-16
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -102,8 +102,8 @@ function get_query_var( string $var, string $default = '' ): string {
 /**
  * Retrieves rewrite structures.
  *
- * @param ?string $field (Optional) Field of rewrite structure args.
- * @param ?array  $vars  (Optional) Variable names for filtering.
+ * @param string|null $field (Optional) Field of rewrite structure args.
+ * @param array|null  $vars  (Optional) Variable names for filtering.
  * @return mixed|array Rewrite structures.
  */
 function get_structures( ?string $field = null, ?array $vars = null ) {
@@ -126,7 +126,7 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
 /**
  * Retrieves invalid pagename.
  *
- * @return ?array Invalid pagename.
+ * @return array|null Invalid pagename.
  */
 function get_invalid_pagename(): ?array {
 	return _get_instance()->invalid_pagename;
@@ -554,8 +554,8 @@ function _cb_page_link( string $link ): string {
  *
  * @access private
  *
- * @param string    $link The permalink.
- * @param ?\WP_Post $post (When used as 'post_link' filter) The post in question.
+ * @param string        $link The permalink.
+ * @param \WP_Post|null $post (When used as 'post_link' filter) The post in question.
  * @return string The filtered URL.
  */
 function _cb_link( string $link, ?\WP_Post $post = null ): string {

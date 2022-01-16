@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-15
+ * @version 2022-01-16
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -319,9 +319,9 @@ function _cb_admin_menu() {
  *
  * @access private
  *
- * @param ?string $submenu_file The submenu file.
- * @param string  $parent_file  The submenu item's parent file.
- * @return ?string The filtered file.
+ * @param string|null $submenu_file The submenu file.
+ * @param string      $parent_file  The submenu item's parent file.
+ * @return string|null The filtered file.
  */
 function _cb_submenu_file( ?string $submenu_file, string $parent_file ): ?string {
 	if ( EDIT_PAGE_URL === $parent_file ) {
