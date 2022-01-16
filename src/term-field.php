@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-15
+ * @version 2022-01-16
  */
 
 namespace wpinc\plex\term_field;
@@ -24,7 +24,7 @@ require_once __DIR__ . '/slug-key.php';
  *     @type bool 'has_description'           Whether the terms has custom descriptions.
  * }
  */
-function add_taxonomy( $taxonomy_s, array $args = array() ) {
+function add_taxonomy( $taxonomy_s, array $args = array() ): void {
 	$inst = _get_instance();
 	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
 
@@ -52,7 +52,7 @@ function add_taxonomy( $taxonomy_s, array $args = array() ) {
  * @param array  $slug_to_label An array of slug to label.
  * @param string $format        A format to assign.
  */
-function add_admin_labels( array $slug_to_label, ?string $format = null ) {
+function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
@@ -76,7 +76,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type string 'default_singular_name_key' Key of term metadata for default singular names. Default '_singular_name'.
  * }
  */
-function activate( array $args = array() ) {
+function activate( array $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -213,7 +213,7 @@ function _get_term_id_taxonomy( int $term_id = 0 ): array {
  * @param \WP_Term[] $terms Array of found terms.
  * @return \WP_Term[] The filtered terms.
  */
-function _cb_get_terms( array $terms ) {
+function _cb_get_terms( array $terms ): array {
 	$inst = _get_instance();
 	$key  = \wpinc\plex\get_query_key( $inst->vars );
 
@@ -267,7 +267,7 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
  * @param object   $inst     The instance of plex\term_field.
  * @param string   $key      The key of term metadata.
  */
-function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key ) {
+function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key ): void {
 	if ( isset( $t->orig_name ) ) {
 		return;
 	}
@@ -294,7 +294,7 @@ function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key
  * @param string   $taxonomy The taxonomy slug.
  * @param object   $inst     The instance of plex\term_field.
  */
-function _add_singular_name( \WP_Term $t, string $taxonomy, object $inst ) {
+function _add_singular_name( \WP_Term $t, string $taxonomy, object $inst ): void {
 	if ( ! isset( $t->singular_name ) ) {
 		$sn = get_term_meta( $t->term_id, $inst->key_default_sg_name, true );
 
@@ -354,14 +354,14 @@ function _get_term_field( string $field, int $term_id ) {
 
 
 /**
- * Callback function for '{$taxonomy}_edit_form_fields' hook.
+ * Callback function for '{$taxonomy}_edit_form_fields' action.
  *
  * @access private
  *
  * @param \WP_Term $t        Current taxonomy term object.
  * @param string   $taxonomy Current taxonomy slug.
  */
-function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ) {
+function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ): void {
 	$inst   = _get_instance();
 	$t_meta = get_term_meta( $t->term_id );
 
@@ -417,7 +417,7 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ) {
  * @param string $val   The value of the field.
  * @param string $style The style of the field.
  */
-function _echo_name_field( string $label, string $id, string $name, string $val, string $style = '' ) {
+function _echo_name_field( string $label, string $id, string $name, string $val, string $style = '' ): void {
 	?>
 <tr class="form-field">
 	<th style="<?php echo esc_attr( $style ); ?>">
@@ -440,7 +440,7 @@ function _echo_name_field( string $label, string $id, string $name, string $val,
  * @param string $name  The name of the field.
  * @param string $val   The value of the field.
  */
-function _echo_description_field( string $label, string $id, string $name, string $val ) {
+function _echo_description_field( string $label, string $id, string $name, string $val ): void {
 	?>
 <tr class="form-field term-description-wrap">
 	<th scope="row">
@@ -454,13 +454,13 @@ function _echo_description_field( string $label, string $id, string $name, strin
 }
 
 /**
- * Callback function for 'edited_{$taxonomy}' hook.
+ * Callback function for 'edited_{$taxonomy}' action.
  *
  * @access private
  *
  * @param int $term_id Term ID.
  */
-function _cb_edited_taxonomy( int $term_id ) {
+function _cb_edited_taxonomy( int $term_id ): void {
 	$inst     = _get_instance();
 	$key_name = $inst->key_pre_name . 'array';
 	$key_sn   = $inst->key_pre_sg_name . 'array';
@@ -497,7 +497,7 @@ function _cb_edited_taxonomy( int $term_id ) {
  * @param string $key     Metadata name.
  * @param mixed  $val     Metadata value. Must be serializable if non-scalar.
  */
-function _modify_term_meta( int $term_id, string $key, $val ) {
+function _modify_term_meta( int $term_id, string $key, $val ): void {
 	if ( empty( $val ) ) {
 		delete_term_meta( $term_id, $key );
 	} else {

@@ -22,7 +22,7 @@ namespace wpinc\plex\custom_rewrite;
  *     @type bool     'global'       Whether the global variable is assigned. Default false.
  * }
  */
-function add_structure( array $args ) {
+function add_structure( array $args ): void {
 	$args += array(
 		'var'          => '',
 		'slugs'        => array(),
@@ -47,14 +47,14 @@ function add_structure( array $args ) {
  *
  * @param callable $callback Callable for post link filter.
  */
-function add_post_link_filter( callable $callback ) {
+function add_post_link_filter( callable $callback ): void {
 	_get_instance()->post_link_filters[] = $callback;
 }
 
 /**
  * Activates the custom rewrite.
  */
-function activate() {
+function activate(): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -84,7 +84,7 @@ function activate() {
  * @param string $var   Query variable key.
  * @param string $value Query variable value.
  */
-function set_query_var( string $var, string $value ) {
+function set_query_var( string $var, string $value ): string {
 	return _get_instance()->vars[ $var ] = $value;
 }
 
@@ -269,11 +269,11 @@ function _extract_query_path( string $url ): string {
 
 
 /**
- * Callback function for 'after_setup_theme' hook.
+ * Callback function for 'after_setup_theme' action.
  *
  * @access private
  */
-function _cb_after_setup_theme() {
+function _cb_after_setup_theme(): void {
 	$inst = _get_instance();
 	if ( empty( $inst->structures ) ) {
 		return;
@@ -375,7 +375,7 @@ function _parse_request(): array {
  *
  * @access private
  */
-function _register_globals() {
+function _register_globals(): void {
 	$inst = _get_instance();
 	foreach ( $inst->structures as $st ) {
 		if ( $st['global'] ) {
@@ -463,7 +463,7 @@ function _has_feed_query(): bool {
  * @param string $req_path Requested path.
  * @param string $after    Replacement value.
  */
-function _redirect( string $req_path, string $after ) {
+function _redirect( string $req_path, string $after ): void {
 	// phpcs:disable
 	$url = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );
 	// phpcs:enable
@@ -479,7 +479,7 @@ function _redirect( string $req_path, string $after ) {
  * @param string $req_path Requested path.
  * @param string $after    Replacement value.
  */
-function _replace_request( string $req_path, string $after ) {
+function _replace_request( string $req_path, string $after ): void {
 	// phpcs:disable
 	$_SERVER['REQUEST_URI_ORIG'] = $_SERVER['REQUEST_URI'] ?? '';
 	$_SERVER['REQUEST_URI']      = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );

@@ -21,7 +21,7 @@ const EDIT_PAGE_URL   = 'edit.php?post_type=page';
  * @param array  $slug_to_label An array of slug to label.
  * @param string $format        A format to assign.
  */
-function add_admin_labels( array $slug_to_label, ?string $format = null ) {
+function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
@@ -39,7 +39,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type bool 'has_default_front_bloginfo' Whether the site has the default front bloginfo. Default true.
  * }
  */
-function activate( array $args = array() ) {
+function activate( array $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -226,7 +226,7 @@ function _cb_body_class( array $classes ): array {
  *
  * @access private
  */
-function _cb_admin_init() {
+function _cb_admin_init(): void {
 	$inst    = _get_instance();
 	$def_key = $inst->has_default_front_bloginfo ? '' : \wpinc\plex\get_default_key();
 
@@ -278,7 +278,7 @@ function _cb_admin_init() {
  *
  * @param string $key The key of the field.
  */
-function _cb_field_input( string $key ) {
+function _cb_field_input( string $key ): void {
 	$val = get_option( $key );
 	printf( '<input id="%1$s" name="%1$s" type="text" value="%2$s" class="regular-text">', esc_attr( $key ), esc_attr( $val ) );
 }
@@ -301,7 +301,7 @@ function _cb_query_vars( array $public_query_vars ): array {
  *
  * @access private
  */
-function _cb_admin_menu() {
+function _cb_admin_menu(): void {
 	$inst = _get_instance();
 
 	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
@@ -353,7 +353,7 @@ function _cb_submenu_file( ?string $submenu_file, string $parent_file ): ?string
  *
  * @param \WP_Query $query The WP_Query instance (passed by reference).
  */
-function _cb_parse_query( \WP_Query $query ) {
+function _cb_parse_query( \WP_Query $query ): void {
 	global $pagenow;
 	if ( 'edit.php' !== $pagenow ) {
 		return;
@@ -411,11 +411,11 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 }
 
 /**
- * Callback function for 'admin_head' hook.
+ * Callback function for 'admin_head' action.
  *
  * @access private
  */
-function _cb_admin_head() {
+function _cb_admin_head(): void {
 	echo '<style>';
 	foreach ( _get_front_page_ids() as $id ) {
 		echo "body.post-type-page select#parent_id option[value='" . esc_attr( $id ) . "']{font-weight:bold;}\n";
@@ -442,7 +442,7 @@ function _cb_admin_head() {
  *
  * @param \WP_Admin_Bar $wp_admin_bar WP_Admin_Bar instance, passed by reference.
  */
-function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ) {
+function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ): void {
 	$inst = _get_instance();
 
 	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {

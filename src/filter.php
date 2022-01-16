@@ -24,7 +24,7 @@ require_once __DIR__ . '/slug-key.php';
  *     @type array  'slug_to_label'   An array of slug to label.
  * }
  */
-function add_filter_taxonomy( string $var, array $args = array() ) {
+function add_filter_taxonomy( string $var, array $args = array() ): void {
 	$args += array(
 		'taxonomy'          => $var,
 		'do_insert_terms'   => true,
@@ -69,9 +69,9 @@ function add_filter_taxonomy( string $var, array $args = array() ) {
 /**
  * Adds filtered post types.
  *
- * @param array|string $post_type_s A post type or an array of post types.
+ * @param string|string[] $post_type_s A post type or an array of post types.
  */
-function add_filtered_post_type( $post_type_s ) {
+function add_filtered_post_type( $post_type_s ): void {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 	foreach ( $pts as $pt ) {
@@ -85,9 +85,9 @@ function add_filtered_post_type( $post_type_s ) {
 /**
  * Adds counted taxonomies.
  *
- * @param array|string $taxonomy_s A taxonomy or an array of taxonomies.
+ * @param string|string[] $taxonomy_s A taxonomy or an array of taxonomies.
  */
-function add_counted_taxonomy( $taxonomy_s ) {
+function add_counted_taxonomy( $taxonomy_s ): void {
 	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
 	$inst = _get_instance();
 
@@ -103,7 +103,7 @@ function add_counted_taxonomy( $taxonomy_s ) {
  *     @type string 'count_key_prefix' Key prefix of term count. Default '_count_'.
  * }
  */
-function activate( array $args = array() ) {
+function activate( array $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -445,7 +445,7 @@ function _post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
  * @param int    $tt_id    Term taxonomy ID.
  * @param string $taxonomy Taxonomy slug.
  */
-function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ) {
+function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 	$inst = _get_instance();
 	if ( empty( $inst->txs_counted ) ) {
 		return;

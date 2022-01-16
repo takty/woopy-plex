@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2021-04-15
+ * @version 2022-01-16
  */
 
 namespace wpinc\plex\option_field;
@@ -18,7 +18,7 @@ require_once __DIR__ . '/slug-key.php';
  * @param array  $slug_to_label An array of slug to label.
  * @param string $format        A format to assign.
  */
-function add_admin_labels( array $slug_to_label, ?string $format = null ) {
+function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
@@ -36,7 +36,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type array 'vars' Query variable names.
  * }
  */
-function activate( array $args = array() ) {
+function activate( array $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -101,11 +101,11 @@ function _cb_option_time_format( string $value ): string {
 
 
 /**
- * Callback function for 'admin_head' hook.
+ * Callback function for 'admin_head' action.
  *
  * @access private
  */
-function _cb_admin_head() {
+function _cb_admin_head(): void {
 	?>
 <style>
 	.wpinc-plex-option-field th { padding-top: 10px; padding-bottom: 10px; }
@@ -118,7 +118,7 @@ function _cb_admin_head() {
  *
  * @access private
  */
-function _cb_admin_init() {
+function _cb_admin_init(): void {
 	$inst = _get_instance();
 
 	add_settings_section( 'option-field-section', _x( 'Option Fields', 'option field', 'plex' ), function () {}, 'general' );
@@ -166,7 +166,7 @@ function _cb_admin_init() {
  *
  * @param string $key The key of the field.
  */
-function _cb_field_input( string $key ) {
+function _cb_field_input( string $key ): void {
 	$_key = esc_attr( $key );
 	$_val = esc_attr( get_option( $key ) );
 	// phpcs:disable

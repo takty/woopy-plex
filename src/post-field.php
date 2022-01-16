@@ -16,7 +16,7 @@ require_once __DIR__ . '/custom-rewrite.php';
  *
  * @param string|string[] $post_type_s Post types.
  */
-function add_post_type( $post_type_s ) {
+function add_post_type( $post_type_s ): void {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 
@@ -29,7 +29,7 @@ function add_post_type( $post_type_s ) {
  * @param array  $slug_to_label An array of slug to label.
  * @param string $format        A format to assign.
  */
-function add_admin_labels( array $slug_to_label, ?string $format = null ) {
+function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
@@ -49,7 +49,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ) {
  *     @type string 'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_field_'.
  * }
  */
-function activate( array $args = array() ) {
+function activate( array $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -182,14 +182,14 @@ function _cb_the_content( string $content ): string {
 
 
 /**
- * Callback function for 'save_post_{$post_type}' hook.
+ * Callback function for 'save_post_{$post_type}' action.
  *
  * @access private
  *
  * @param int      $post_id Post ID.
  * @param \WP_Post $post    Post object.
  */
-function _cb_save_post( int $post_id, \WP_Post $post ) {
+function _cb_save_post( int $post_id, \WP_Post $post ): void {
 	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 		return;
 	}
@@ -218,11 +218,11 @@ function _cb_save_post( int $post_id, \WP_Post $post ) {
 }
 
 /**
- * Callback function for 'admin_head' hook.
+ * Callback function for 'admin_head' action.
  *
  * @access private
  */
-function _cb_admin_head() {
+function _cb_admin_head(): void {
 	?>
 <style>
 	.wpinc-plex-post-field-title input {
@@ -240,11 +240,11 @@ function _cb_admin_head() {
 }
 
 /**
- * Callback function for 'admin_menu' hook.
+ * Callback function for 'admin_menu' action.
  *
  * @access private
  */
-function _cb_admin_menu() {
+function _cb_admin_menu(): void {
 	$inst = _get_instance();
 	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 
@@ -278,7 +278,7 @@ function _cb_admin_menu() {
  *
  * @param string $key The key of the fields.
  */
-function _echo_title_content_field( $key ) {
+function _echo_title_content_field( string $key ): void {
 	global $post;
 	$name        = $inst->key_pre_title . $key;
 	$title       = get_post_meta( $post->ID, $name, true );
