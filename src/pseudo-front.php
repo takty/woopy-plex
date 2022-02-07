@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-01-16
+ * @version 2022-02-07
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -230,7 +230,7 @@ function _cb_admin_init(): void {
 	$inst    = _get_instance();
 	$def_key = $inst->has_default_front_bloginfo ? '' : \wpinc\plex\get_default_key();
 
-	add_settings_section( 'pseudo-front-section', _x( 'Pseudo Front Pages', 'pseudo front', 'plex' ), function () {}, 'general' );
+	add_settings_section( 'pseudo-front-section', _x( 'Pseudo Front Pages', 'pseudo front', 'wpinc_plex' ), function () {}, 'general' );
 
 	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
 		if ( $key === $def_key ) {
@@ -404,7 +404,7 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 		if ( $is_real_front ) {
 			$post_states['page_on_front'] = _x( 'Front Page', 'page label' );
 		} else {
-			$post_states['page_on_front'] = _x( 'Pseudo Front Page', 'pseudo front', 'plex' );
+			$post_states['page_on_front'] = _x( 'Pseudo Front Page', 'pseudo front', 'wpinc_plex' );
 		}
 	}
 	return $post_states;

@@ -4,7 +4,7 @@
  *
  * @package Sample
  * @author Takuto Yanagida
- * @version 2022-01-26
+ * @version 2022-02-07
  */
 
 namespace sample;
@@ -126,7 +126,7 @@ function _cb_after_setup_theme_multi_lang() {
 		switch_to_locale( $locale );
 	}
 	load_theme_textdomain( 'theme', get_template_directory() . '/languages' );
-	load_theme_textdomain( 'plex', __DIR__ . '/plex/languages' );
+	load_theme_textdomain( 'wpinc_plex', __DIR__ . '/plex/languages' );
 }
 
 /**
