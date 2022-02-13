@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-01-16
+ * @version 2022-02-14
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -340,15 +340,13 @@ function _parse_request(): array {
 	if ( empty( $rewrite ) ) {
 		return array( '', '' );
 	}
-	// phpcs:disable
-	$pathinfo         = $_SERVER['PATH_INFO'] ?? '';
+	$pathinfo         = $_SERVER['PATH_INFO'] ?? '';  // phpcs:ignore
 	list( $pathinfo ) = explode( '?', $pathinfo );
 	$pathinfo         = str_replace( '%', '%25', $pathinfo );
 
-	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );
-	$home_path       = trim( parse_url( \home_url(), PHP_URL_PATH ), '/' );
+	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );  // phpcs:ignore
+	$home_path       = trim( parse_url( \home_url(), PHP_URL_PATH ), '/' );  // phpcs:ignore
 	$home_path_regex = sprintf( '|^%s|i', preg_quote( $home_path, '|' ) );
-	// phpcs:enable
 
 	$req_uri  = str_replace( $pathinfo, '', $req_uri );
 	$req_uri  = trim( $req_uri, '/' );
@@ -464,9 +462,7 @@ function _has_feed_query(): bool {
  * @param string $after    Replacement value.
  */
 function _redirect( string $req_path, string $after ): void {
-	// phpcs:disable
-	$url = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );
-	// phpcs:enable
+	$url = _replace_path( $_SERVER['REQUEST_URI'] ?? '', $req_path, $after );  // phpcs:ignore
 	wp_safe_redirect( $url, 301 );
 	exit;
 }

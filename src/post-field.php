@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-01-16
+ * @version 2022-02-14
  */
 
 namespace wpinc\plex\post_field;
@@ -203,10 +203,10 @@ function _cb_save_post( int $post_id, \WP_Post $post ): void {
 		if ( ! isset( $_POST[ "post_{$key}_nonce" ] ) ) {
 			continue;
 		}
-		// phpcs:disable
-		if ( ! wp_verify_nonce( $_POST[ "post_{$key}_nonce" ], "post_$key" ) ) {
+		if ( ! wp_verify_nonce( sanitize_key( $_POST[ "post_{$key}_nonce" ] ), "post_$key" ) ) {
 			continue;
 		}
+		// phpcs:disable
 		$title   = $_POST[ $inst->key_pre_title . $key ];
 		$content = $_POST[ $inst->key_pre_content . $key ];
 		// phpcs:enable
