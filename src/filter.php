@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-02-11
+ * @version 2022-02-15
  */
 
 namespace wpinc\plex\filter;
@@ -457,7 +457,8 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 		return;
 	}
 	if ( $is_filtered ) {
-		$tars = array( $tt_id );
+		$t    = get_term_by( 'term_taxonomy_id', $tt_id );
+		$tars = $t ? array( $t ) : array();
 	} else {
 		$tars = get_terms(
 			array(
