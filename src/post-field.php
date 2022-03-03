@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-02-14
+ * @version 2022-03-04
  */
 
 namespace wpinc\plex\post_field;
@@ -68,7 +68,7 @@ function activate( array $args = array() ): void {
 
 	if ( is_admin() ) {
 		add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
-		add_action( 'admin_menu', '\wpinc\plex\post_field\_cb_admin_menu' );
+		add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes' );
 		foreach ( $inst->post_types as $pt ) {
 			add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10, 2 );
 		}
@@ -240,11 +240,11 @@ function _cb_admin_head(): void {
 }
 
 /**
- * Callback function for 'admin_menu' action.
+ * Callback function for 'add_meta_boxes' action.
  *
  * @access private
  */
-function _cb_admin_menu(): void {
+function _cb_add_meta_boxes(): void {
 	$inst = _get_instance();
 	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 
