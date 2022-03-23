@@ -4,7 +4,7 @@
  *
  * @package Sample
  * @author Takuto Yanagida
- * @version 2022-02-07
+ * @version 2022-03-15
  */
 
 namespace sample;
@@ -200,4 +200,13 @@ function get_site_lang() {
  */
 function home_url( string $path = '', array $vars = array() ): string {
 	return \wpinc\plex\pseudo_front\home_url( $path, null, $vars );
+}
+
+/**
+ * Retrieves invalid pagename.
+ *
+ * @return array|null Invalid pagename.
+ */
+function get_invalid_pagename(): ?array {
+	return \wpinc\plex\custom_rewrite\get_invalid_pagename();
 }
