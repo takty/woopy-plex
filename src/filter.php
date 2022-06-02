@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-02-15
+ * @version 2022-05-27
  */
 
 namespace wpinc\plex\filter;
@@ -420,7 +420,7 @@ function _post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
 			return $query_vars;
 		}
 		$term_slugs = array_column( $terms, 'slug' );
-		if ( ! in_array( $query_vars[ $var ], $term_slugs, true ) ) {
+		if ( ! isset( $query_vars[ $var ] ) || ! in_array( $query_vars[ $var ], $term_slugs, true ) ) {
 			$query_vars[ $var ] = $term_slugs[0];
 		}
 	}
