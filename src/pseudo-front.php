@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-02-07
+ * @version 2022-06-28
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -47,10 +47,13 @@ function activate( array $args = array() ): void {
 	$inst = _get_instance();
 
 	$args += array(
-		'has_default_front_bloginfo' => true,
+		'has_default_front_bloginfo'  => true,
+		'do_set_page_on_front_option' => true,
 	);
 
-	$inst->has_default_front_bloginfo = $args['has_default_front_bloginfo'];
+	$inst->has_default_front_bloginfo  = $args['has_default_front_bloginfo'];
+	$inst->do_set_page_on_front_option = $args['do_set_page_on_front_option'];
+
 	if ( ! $inst->has_default_front_bloginfo ) {
 		$key = \wpinc\plex\get_default_key();
 		delete_option( "blogname_$key" );
@@ -268,6 +271,12 @@ function _cb_admin_init(): void {
 				'class'     => 'wpinc-plex-pseudo-front-blogdescription',
 			)
 		);
+	}
+	if ( $inst->do_set_page_on_front_option ) {
+		$fp = get_page_by_path( \wpinc\plex\custom_rewrite\build_full_path() );
+		if ( $fp ) {
+			update_option( 'page_on_front', $fp->ID );
+		}
 	}
 }
 
@@ -498,6 +507,13 @@ function _get_instance(): object {
 		 * @var bool
 		 */
 		public $has_default_front_bloginfo = true;
+
+		/**
+		 * Whether to set page_on_front option.
+		 *
+		 * @var bool
+		 */
+		public $do_set_page_on_front_option = true;
 
 		/**
 		 * Whether redirect is suppressed.

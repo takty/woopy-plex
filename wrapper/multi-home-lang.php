@@ -4,7 +4,7 @@
  *
  * @package Sample
  * @author Takuto Yanagida
- * @version 2022-03-15
+ * @version 2022-06-28
  */
 
 namespace sample;
@@ -39,15 +39,16 @@ const TAXONOMY_POST_LANG  = 'post_lang';
  */
 function initialize_multi_home_lang( array $args ) {
 	$args += array(
-		'site_langs'             => array(),
-		'default_lang'           => '',
-		'site_homes'             => array(),
-		'default_home'           => '',
-		'default_home_omittable' => false,
-		'admin_labels'           => array(),
-		'translated_taxonomies'  => array(),
-		'filter_term_labels'     => array(),
-		'filtered_post_types'    => array(),
+		'site_langs'                  => array(),
+		'default_lang'                => '',
+		'site_homes'                  => array(),
+		'default_home'                => '',
+		'default_home_omittable'      => false,
+		'admin_labels'                => array(),
+		'translated_taxonomies'       => array(),
+		'filter_term_labels'          => array(),
+		'filtered_post_types'         => array(),
+		'do_set_page_on_front_option' => true,
 	);
 	$inst  = &_get_multi_home_lang_instance();
 	$inst += $args;
@@ -78,7 +79,12 @@ function initialize_multi_home_lang( array $args ) {
 	/*
 	 * For enabling pseudo front pages.
 	 */
-	\wpinc\plex\pseudo_front\activate( array( 'has_default_front_bloginfo' => false ) );
+	\wpinc\plex\pseudo_front\activate(
+		array(
+			'has_default_front_bloginfo'  => false,
+			'do_set_page_on_front_option' => $args['do_set_page_on_front_option'],
+		)
+	);
 	\wpinc\plex\pseudo_front\add_admin_labels( $args['admin_labels'] );
 
 	/*
