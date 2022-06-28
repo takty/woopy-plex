@@ -30,6 +30,7 @@ const TAXONOMY_POST_LANG  = 'post_lang';
  *     @type array  $translated_taxonomies
  *     @type array  $filter_term_labels
  *     @type array  $filtered_post_types
+ *     @type bool   $do_set_page_on_front_option
  * }
  */
 function initialize_multi_lang( array $args ) {
