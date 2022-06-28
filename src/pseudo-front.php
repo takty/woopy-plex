@@ -36,7 +36,8 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
  * @param array $args {
  *     (Optional) Configuration arguments.
  *
- *     @type bool 'has_default_front_bloginfo' Whether the site has the default front bloginfo. Default true.
+ *     @type bool 'has_default_front_bloginfo'  Whether the site has the default front bloginfo. Default true.
+ *     @type bool 'do_set_page_on_front_option' Whether to set page_on_front option.
  * }
  */
 function activate( array $args = array() ): void {
