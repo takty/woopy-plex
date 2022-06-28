@@ -24,13 +24,13 @@ const TAXONOMY_POST_LANG  = 'post_lang';
  * @param array $args {
  *     Configuration arguments.
  *
- *     @type array  $site_langs
- *     @type string $default_lang
- *     @type array  $admin_labels
- *     @type array  $translated_taxonomies
- *     @type array  $filter_term_labels
- *     @type array  $filtered_post_types
- *     @type bool   $do_set_page_on_front_option
+ *     @type array  'site_langs'
+ *     @type string 'default_lang'
+ *     @type array  'admin_labels'
+ *     @type array  'translated_taxonomies'
+ *     @type array  'filter_term_labels'
+ *     @type array  'filtered_post_types'
+ *     @type bool   'do_set_page_on_front_option'
  * }
  */
 function initialize_multi_lang( array $args ) {
