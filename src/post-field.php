@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-03-04
+ * @version 2022-07-01
  */
 
 namespace wpinc\plex\post_field;
@@ -160,7 +160,7 @@ function _cb_the_content( string $content ): string {
 	if ( post_password_required( $p ) ) {
 		return get_the_password_form( $p );
 	}
-	if ( ! in_array( $p->post_type, $inst->post_types, true ) ) {
+	if ( ! $p || ! in_array( $p->post_type, $inst->post_types, true ) ) {
 		return $content;
 	}
 	$key = \wpinc\plex\get_query_key( $inst->vars );
