@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-06-07
+ * @version 2022-07-21
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -64,6 +64,8 @@ function activate(): void {
 		add_filter( 'request', '\wpinc\plex\custom_rewrite\_cb_request' );
 		add_filter( 'redirect_canonical', '\wpinc\plex\custom_rewrite\_cb_redirect_canonical', 1, 2 );
 	}
+	add_filter( 'url_to_postid', '\wpinc\plex\custom_rewrite\_cb_url_to_postid' );
+
 	add_filter( 'page_link', '\wpinc\plex\custom_rewrite\_cb_page_link' );
 	add_filter( 'post_link', '\wpinc\plex\custom_rewrite\_cb_link', 10, 2 );
 	add_filter( 'post_type_link', '\wpinc\plex\custom_rewrite\_cb_link', 10, 2 );
@@ -521,6 +523,24 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ): 
 		}
 	}
 	return $redirect_url;
+}
+
+/**
+ * Callback function for 'url_to_postid' filter.
+ *
+ * @access private
+ *
+ * @param string $url The URL to derive the post ID from.
+ * @return string Original URL.
+ */
+function _cb_url_to_postid( string $url ): string {
+	list( $vars, $cur ) = _extract_vars( $url );
+
+	$full = build_full_path( $vars );
+	if ( $full !== $cur ) {
+		$url = _replace_path( $url, $cur, $full );
+	}
+	return $url;
 }
 
 
