@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-07-21
+ * @version 2022-08-26
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -203,12 +203,14 @@ function _replace_path( string $url, string $before, string $after ): string {
 	$frag   = isset( $pu['fragment'] ) ? '#' . $pu['fragment'] : '';
 	// phpcs:enable
 
+	$has_slash = substr( $path, -1 ) === '/';
+
 	$path = _str_replace_one(
 		trailingslashit( "$home$before" ),
 		trailingslashit( "$home$after" ),
 		trailingslashit( $path )
 	);
-	$path = ( $home === $path ) ? $path : user_trailingslashit( $path );
+	$path = ( $home === $path || $has_slash ) ? $path : untrailingslashit( $path );
 
 	return "$scheme$user$pass$host$port$path$query$frag";
 }
