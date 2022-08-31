@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-02-07
+ * @version 2022-08-31
  */
 
 namespace wpinc\plex\term_field;
@@ -220,14 +220,14 @@ function _cb_get_terms( array $terms ): array {
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		foreach ( $terms as $t ) {
 			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
-			if ( in_array( $t->taxonomy, $inst->txs_default_sg_name, true ) ) {
+			if ( $t && in_array( $t->taxonomy, $inst->txs_default_sg_name, true ) ) {
 				_add_singular_name( $t, $t->taxonomy, $inst );
 			}
 		}
 	} else {
 		foreach ( $terms as $t ) {
 			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
-			if ( in_array( $t->taxonomy, $inst->txs, true ) ) {
+			if ( $t && in_array( $t->taxonomy, $inst->txs, true ) ) {
 				_replace_name( $t, $t->taxonomy, $inst, $key );
 			}
 		}
