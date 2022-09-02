@@ -4,12 +4,13 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-05-27
+ * @version 2022-09-02
  */
 
 namespace wpinc\plex\filter;
 
 require_once __DIR__ . '/custom-rewrite.php';
+require_once __DIR__ . '/multi-term-filter.php';
 require_once __DIR__ . '/slug-key.php';
 
 /**
@@ -42,21 +43,12 @@ function add_filter_taxonomy( string $var, array $args = array() ): void {
 	$tx              = $args['taxonomy'];
 	$do_insert_terms = $args['do_insert_terms'];
 	$slug_to_label   = $args['slug_to_label'];
-	unset( $args['taxonomy'] );
-	unset( $args['do_insert_terms'] );
-	unset( $args['slug_to_label'] );
+	unset( $args['taxonomy'], $args['do_insert_terms'], $args['slug_to_label'] );
 
 	register_taxonomy( $tx, null, $args );
 
 	if ( $do_insert_terms ) {
-		$slugs = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) )[0];
-		foreach ( $slugs as $slug ) {
-			$term = get_term_by( 'slug', $slug, $tx );
-			if ( false === $term ) {
-				$lab = $slug_to_label[ $slug ] ?? ucfirst( $slug );
-				wp_insert_term( $lab, $tx, array( 'slug' => $slug ) );
-			}
-		}
+		_insert_terms( $var, $tx, $slug_to_label );
 	}
 	$inst = _get_instance();
 	foreach ( $inst->post_types as $pt ) {
@@ -64,6 +56,26 @@ function add_filter_taxonomy( string $var, array $args = array() ): void {
 	}
 	$inst->vars[]            = $var;
 	$inst->var_to_tx[ $var ] = $tx;
+}
+
+/**
+ * Inserts terms.
+ *
+ * @access private
+ *
+ * @param string $var           The query variable name related to the taxonomy.
+ * @param string $tx            Taxonomy.
+ * @param array  $slug_to_label Array of slugs to label.
+ */
+function _insert_terms( string $var, string $tx, array $slug_to_label ): void {
+	$slugs = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) )[0];
+	foreach ( $slugs as $slug ) {
+		$t = get_term_by( 'slug', $slug, $tx );
+		if ( false === $t ) {
+			$l = $slug_to_label[ $slug ] ?? ucfirst( $slug );
+			wp_insert_term( $l, $tx, array( 'slug' => $slug ) );
+		}
+	}
 }
 
 /**
@@ -77,6 +89,7 @@ function add_filtered_post_type( $post_type_s ): void {
 	foreach ( $pts as $pt ) {
 		foreach ( $inst->var_to_tx as $tx ) {
 			register_taxonomy_for_object_type( $tx, $pt );
+			\wpinc\plex\multi_term_filter\add_function_to_retrieve_terms( 'wpinc\plex\filter\_get_query_terms', $pt );
 		}
 	}
 	$inst->post_types = array_merge( $inst->post_types, $pts );
@@ -118,20 +131,11 @@ function activate( array $args = array() ): void {
 
 	if ( is_admin() ) {
 		add_action( 'edited_term_taxonomy', '\wpinc\plex\filter\_cb_edited_term_taxonomy', 10, 2 );
-		\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\filter\_post_link_filter' );
 	} else {
-		add_filter( 'get_next_post_join', '\wpinc\plex\filter\_cb_get_adjacent_post_join', 10, 5 );
-		add_filter( 'get_previous_post_join', '\wpinc\plex\filter\_cb_get_adjacent_post_join', 10, 5 );
-		add_filter( 'get_next_post_where', '\wpinc\plex\filter\_cb_get_adjacent_post_where', 10, 5 );
-		add_filter( 'get_previous_post_where', '\wpinc\plex\filter\_cb_get_adjacent_post_where', 10, 5 );
-
-		add_filter( 'getarchives_join', '\wpinc\plex\filter\_cb_getarchives_join', 10, 2 );
-		add_filter( 'getarchives_where', '\wpinc\plex\filter\_cb_getarchives_where', 10, 2 );
-
-		add_action( 'posts_join', '\wpinc\plex\filter\_cb_posts_join', 10, 2 );
-		add_action( 'posts_where', '\wpinc\plex\filter\_cb_posts_where', 10, 2 );
-		add_action( 'posts_groupby', '\wpinc\plex\filter\_cb_posts_groupby', 10, 2 );
+		\wpinc\plex\multi_term_filter\add_function_to_retrieve_terms( 'wpinc\plex\filter\_get_query_terms' );  // For search.
+		\wpinc\plex\multi_term_filter\activate();
 	}
+	\wpinc\plex\custom_rewrite\add_post_link_filter( '\wpinc\plex\filter\_cb_post_link_filter' );
 }
 
 
@@ -139,55 +143,13 @@ function activate( array $args = array() ): void {
 
 
 /**
- * Builds term relationships for JOIN clause.
- *
- * @access private
- * @global $wpdb;
- *
- * @param int    $count    The number of joined tables.
- * @param string $wp_posts Table name of wp_posts.
- * @param string $type     Operation type.
- * @return string The JOIN clause.
- */
-function _build_join_term_relationships( int $count, string $wp_posts, string $type = 'INNER' ): string {
-	global $wpdb;
-	$q = array();
-	for ( $i = 0; $i < $count; ++$i ) {
-		$q[] = " $type JOIN {$wpdb->term_relationships} AS tr$i ON ($wp_posts.ID = tr$i.object_id)";
-	}
-	return implode( '', $q );
-}
-
-/**
- * Builds term relationships for WHERE clause.
- *
- * @access private
- * @global $wpdb;
- *
- * @param array $term_taxonomies The array of term taxonomy ids.
- * @return string The WHERE clause.
- */
-function _build_where_term_relationships( array $term_taxonomies ): string {
-	global $wpdb;
-	$q = array();
-	foreach ( $term_taxonomies as $i => $tt ) {
-		$q[] = $wpdb->prepare( 'tr%d.term_taxonomy_id = %d', $i, $tt );
-	}
-	return implode( ' AND ', $q );
-}
-
-/**
- * Retrieves term taxonomy ids.
+ * Retrieves queried terms.
  *
  * @access private
  *
  * @return array The ids.
  */
-function _get_term_taxonomy_ids(): array {
-	static $ret = null;
-	if ( $ret ) {
-		return $ret;
-	}
+function _get_query_terms(): array {
 	$ret  = array();
 	$inst = _get_instance();
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
@@ -196,204 +158,11 @@ function _get_term_taxonomy_ids(): array {
 		$tx = $inst->var_to_tx[ $var ];
 		$t  = get_term_by( 'slug', \wpinc\plex\custom_rewrite\get_query_var( $var ), $tx );
 		if ( $t ) {
-			$ret[] = $t->term_taxonomy_id;
+			$ret[] = $t;
 		}
 	}
 	return $ret;
 }
-
-
-// -----------------------------------------------------------------------------
-
-
-/**
- * Callback function for 'get_{$adjacent}_post_join' filter.
- *
- * @access private
- *
- * @param string       $join           The JOIN clause in the SQL.
- * @param bool         $in_same_term   Whether post should be in a same taxonomy term.
- * @param array|string $excluded_terms Array of excluded term IDs.
- * @param string       $taxonomy       Used to identify the term used when $in_same_term is true.
- * @param \WP_Post     $post           WP_Post object.
- * @return string The filtered clause.
- */
-function _cb_get_adjacent_post_join( string $join, bool $in_same_term, $excluded_terms, string $taxonomy, \WP_Post $post ): string {
-	$inst = _get_instance();
-	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
-		return $join;
-	}
-	$tts = _get_term_taxonomy_ids();
-	if ( ! empty( $tts ) ) {
-		$join .= _build_join_term_relationships( count( $tts ), 'p' );
-	}
-	return $join;
-}
-
-/**
- * Callback function for 'get_{$adjacent}_post_where' filter.
- *
- * @access private
- *
- * @param string       $where          The WHERE clause in the SQL.
- * @param bool         $in_same_term   Whether post should be in a same taxonomy term.
- * @param array|string $excluded_terms Array of excluded term IDs.
- * @param string       $taxonomy       Used to identify the term used when $in_same_term is true.
- * @param \WP_Post     $post           WP_Post object.
- * @return string The filtered clause.
- */
-function _cb_get_adjacent_post_where( string $where, bool $in_same_term, $excluded_terms, string $taxonomy, \WP_Post $post ): string {
-	$inst = _get_instance();
-	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
-		return $where;
-	}
-	$tts = _get_term_taxonomy_ids();
-	if ( ! empty( $tts ) ) {
-		$where .= ' AND ' . _build_where_term_relationships( $tts );
-	}
-	return $where;
-}
-
-
-// -----------------------------------------------------------------------------
-
-
-/**
- * Callback function for 'getarchives_join' filter.
- *
- * @access private
- * @global $wpdb
- *
- * @param string $sql_join    Portion of SQL query containing the JOIN clause.
- * @param array  $parsed_args An array of default arguments.
- * @return string The filtered clause.
- */
-function _cb_getarchives_join( string $sql_join, array $parsed_args ): string {
-	$inst = _get_instance();
-	if ( ! in_array( $parsed_args['post_type'], $inst->post_types, true ) ) {
-		return $sql_join;
-	}
-	$tts = _get_term_taxonomy_ids();
-	if ( ! empty( $tts ) ) {
-		global $wpdb;
-		$sql_join .= _build_join_term_relationships( count( $tts ), $wpdb->posts );
-	}
-	return $sql_join;
-}
-
-/**
- * Callback function for 'getarchives_where' filter.
- *
- * @access private
- *
- * @param string $sql_where   Portion of SQL query containing the WHERE clause.
- * @param array  $parsed_args An array of default arguments.
- * @return string The filtered clause.
- */
-function _cb_getarchives_where( string $sql_where, array $parsed_args ): string {
-	$inst = _get_instance();
-	if ( ! in_array( $parsed_args['post_type'], $inst->post_types, true ) ) {
-		return $sql_where;
-	}
-	$tts = _get_term_taxonomy_ids();
-	if ( ! empty( $tts ) ) {
-		$sql_where .= ' AND ' . _build_where_term_relationships( $tts );
-	}
-	return $sql_where;
-}
-
-
-// -----------------------------------------------------------------------------
-
-
-/**
- * Callback function for 'posts_join' filter.
- *
- * @access private
- * @global $wpdb
- *
- * @param string    $join  The JOIN BY clause of the query.
- * @param \WP_Query $query The WP_Query instance (passed by reference).
- * @return string The filtered clause.
- */
-function _cb_posts_join( string $join, \WP_Query $query ): string {
-	$inst = _get_instance();
-	if ( empty( $inst->post_types ) ) {
-		return $join;
-	}
-	$tts = _get_term_taxonomy_ids();
-	if ( empty( $tts ) ) {
-		return $join;
-	}
-	global $wpdb;
-	if ( in_array( $query->query_vars['post_type'], $inst->post_types, true ) ) {
-		$join .= _build_join_term_relationships( count( $tts ), $wpdb->posts );
-	} elseif ( $query->is_search() ) {
-		$join .= _build_join_term_relationships( count( $tts ), $wpdb->posts, 'LEFT' );
-	}
-	return $join;
-}
-
-/**
- * Callback function for 'posts_where' filter.
- *
- * @access private
- * @global $wpdb
- *
- * @param string    $where The WHERE clause of the query.
- * @param \WP_Query $query The WP_Query instance (passed by reference).
- * @return string The filtered clause.
- */
-function _cb_posts_where( string $where, \WP_Query $query ): string {
-	$inst = _get_instance();
-	if ( empty( $inst->post_types ) ) {
-		return $where;
-	}
-	$tts = _get_term_taxonomy_ids();
-	if ( empty( $tts ) ) {
-		return $where;
-	}
-	global $wpdb;
-	if ( in_array( $query->query_vars['post_type'], $inst->post_types, true ) ) {
-		$where .= ' AND ' . _build_where_term_relationships( $tts );
-	} elseif ( $query->is_search() ) {
-		$pts = "('" . implode( "', '", $inst->post_types ) . "')";
-
-		$where .= " AND ({$wpdb->posts}.post_type NOT IN $pts";
-		$where .= ' OR (' . _build_where_term_relationships( $tts ) . '))';
-	}
-	return $where;
-}
-
-/**
- * Callback function for 'posts_groupby' filter.
- *
- * @access private
- * @global $wpdb
- *
- * @param string    $groupby The GROUP BY clause of the query.
- * @param \WP_Query $query   The WP_Query instance (passed by reference).
- * @return string The filtered clause.
- */
-function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
-	if ( $query->is_search() ) {
-		global $wpdb;
-		$g = "{$wpdb->posts}.ID";
-
-		if ( preg_match( "/$g/", $groupby ) ) {
-			return $groupby;
-		}
-		if ( empty( trim( $groupby ) ) ) {
-			return $g;
-		}
-		$groupby .= ", $g";
-	}
-	return $groupby;
-}
-
-
-// -----------------------------------------------------------------------------
-
 
 /**
  * Callback function for post_link filter of the custom rewrite.
@@ -404,12 +173,9 @@ function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
  * @param \WP_Post|null $post       The post in question.
  * @return array The filtered vars.
  */
-function _post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
-	if ( ! is_admin() || ! is_a( $post, 'WP_Post' ) ) {
-		return $query_vars;
-	}
+function _cb_post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
 	$inst = _get_instance();
-	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
+	if ( null === $post || ! in_array( $post->post_type, $inst->post_types, true ) ) {
 		return $query_vars;
 	}
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
@@ -417,7 +183,7 @@ function _post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
 	foreach ( $vars as $var ) {
 		$terms = get_the_terms( $post->ID, $inst->var_to_tx[ $var ] );
 		if ( ! is_array( $terms ) ) {
-			return $query_vars;
+			continue;
 		}
 		$term_slugs = array_column( $terms, 'slug' );
 		if ( ! isset( $query_vars[ $var ] ) || ! in_array( $query_vars[ $var ], $term_slugs, true ) ) {
@@ -426,10 +192,6 @@ function _post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
 	}
 	return $query_vars;
 }
-
-
-// -----------------------------------------------------------------------------
-
 
 /**
  * Callback function for 'edited_term_taxonomy' action.
@@ -467,7 +229,6 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 			)
 		);
 	}
-	$pts = "('" . implode( "', '", array_map( 'esc_sql', $inst->post_types ) ) . "')";
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars );
 
 	global $wpdb;
@@ -476,24 +237,14 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 		$term_id = $tar->term_id;
 
 		foreach ( $skc as $key => $slugs ) {
-			$tts = array();
+			$tts = array( $tt_id );
 			foreach ( $txs as $idx => $tx ) {
 				$t = get_term_by( 'slug', $slugs[ $idx ], $tx );
-				if ( $t ) {
+				if ( $t && $tt_id !== $t->term_taxonomy_id ) {
 					$tts[] = $t->term_taxonomy_id;
 				}
 			}
-			$count = 0;
-			if ( ! empty( $tts ) ) {
-				$q  = 'SELECT COUNT(*) FROM wp_posts AS p';
-				$q .= " INNER JOIN $wpdb->term_relationships AS tr ON (p.ID = tr.object_id)";
-				$q .= _build_join_term_relationships( count( $tts ), 'p' );
-				// phpcs:disable
-				$q .= $wpdb->prepare( " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN $pts AND tr.term_taxonomy_id = %d", $tt_id );
-				$q .= ' AND ' . _build_where_term_relationships( $tts );
-				$count = (int) $wpdb->get_var( $q );
-				// phpcs:enable
-			}
+			$count = \wpinc\plex\multi_term_filter\count_posts_with_terms( $inst->post_types, $tts );
 			update_term_meta( $term_id, $inst->key_pre_count . $key, $count );
 		}
 	}
@@ -550,13 +301,6 @@ function _get_instance(): object {
 		 * @var string
 		 */
 		public $key_pre_count = '';
-
-		/**
-		 * Whether the get_terms filter is suppressed.
-		 *
-		 * @var bool
-		 */
-		public $suppress_get_terms_filter = false;
 	};
 	return $values;
 }
