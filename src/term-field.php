@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-08-31
+ * @version 2022-09-21
  */
 
 namespace wpinc\plex\term_field;
@@ -195,7 +195,7 @@ function _get_term_id_taxonomy( int $term_id = 0 ): array {
 	} else {
 		$t = get_term( $term_id );
 	}
-	if ( is_wp_error( $t ) || ! is_object( $t ) ) {
+	if ( ! ( $t instanceof \WP_Term ) ) {
 		return array( 0, '' );
 	}
 	return array( $t->term_id, $t->taxonomy );
@@ -217,17 +217,26 @@ function _cb_get_terms( array $terms ): array {
 	$inst = _get_instance();
 	$key  = \wpinc\plex\get_query_key( $inst->vars );
 
+	$ts = array();
+	foreach ( $terms as $t ) {
+		$ts[] = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
+	}
+
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
-		foreach ( $terms as $t ) {
-			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
-			if ( $t && in_array( $t->taxonomy, $inst->txs_default_sg_name, true ) ) {
+		foreach ( $ts as $t ) {
+			if (
+				( $t instanceof \WP_Term ) &&
+				in_array( $t->taxonomy, $inst->txs_default_sg_name, true )
+			) {
 				_add_singular_name( $t, $t->taxonomy, $inst );
 			}
 		}
 	} else {
-		foreach ( $terms as $t ) {
-			$t = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
-			if ( $t && in_array( $t->taxonomy, $inst->txs, true ) ) {
+		foreach ( $ts as $t ) {
+			if (
+				( $t instanceof \WP_Term ) &&
+				in_array( $t->taxonomy, $inst->txs, true )
+			) {
 				_replace_name( $t, $t->taxonomy, $inst, $key );
 			}
 		}
