@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-09-02
+ * @version 2022-09-29
  */
 
 namespace wpinc\plex\filter;
@@ -197,7 +197,6 @@ function _cb_post_link_filter( array $query_vars, ?\WP_Post $post = null ): arra
  * Callback function for 'edited_term_taxonomy' action.
  *
  * @access private
- * @global $wpdb
  *
  * @param int    $tt_id    Term taxonomy ID.
  * @param string $taxonomy Taxonomy slug.
@@ -231,7 +230,6 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 	}
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars );
 
-	global $wpdb;
 	foreach ( $tars as $tar ) {
 		$tt_id   = $tar->term_taxonomy_id;
 		$term_id = $tar->term_id;
