@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-09-29
+ * @version 2022-09-30
  */
 
 namespace wpinc\plex\multi_term_filter;
@@ -65,7 +65,7 @@ function count_posts_with_terms( $post_type_s, array $term_taxonomies ): int {
 	global $wpdb;
 	$q  = "SELECT COUNT(*) FROM $wpdb->posts AS p";
 	$q .= _build_join_term_relationships( count( $term_taxonomies ), 'p' );
-	$q .= " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN $pts AND ";
+	$q .= " WHERE 1=1 AND p.post_status = 'publish' AND p.post_type IN $pts";
 	$q .= ' AND ' . _build_where_term_relationships( $term_taxonomies );
 
 	return (int) $wpdb->get_var( $q );  // phpcs:ignore
