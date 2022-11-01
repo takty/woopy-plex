@@ -4,12 +4,13 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-07-01
+ * @version 2022-11-01
  */
 
 namespace wpinc\plex\post_field;
 
 require_once __DIR__ . '/custom-rewrite.php';
+require_once __DIR__ . '/slug-key.php';
 
 /**
  * Adds post type
@@ -45,6 +46,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
  *     (Optional) Configuration arguments.
  *
  *     @type array  'vars'               Query variable names.
+ *     @type string 'editor_type'        Editor type to be activated: 'block' or 'classic'. Default 'block'.
  *     @type string 'title_key_prefix'   Key prefix of post metadata for custom title. Default '_post_title_'.
  *     @type string 'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_field_'.
  * }
@@ -58,25 +60,85 @@ function activate( array $args = array() ): void {
 
 	$args += array(
 		'vars'               => array(),
+		'editor_type'        => 'block',
 		'title_key_prefix'   => '_post_title_',
 		'content_key_prefix' => '_post_field_',
 	);
 
 	$inst->vars            = $args['vars'];
+	$inst->editor_type     = $args['editor_type'];
 	$inst->key_pre_title   = $args['title_key_prefix'];
 	$inst->key_pre_content = $args['content_key_prefix'];
 
+	if ( 'block' === $inst->editor_type ) {
+		if ( did_action( 'widgets_init' ) ) {
+			_cb_widgets_init();
+		} else {
+			add_action( 'widgets_init', '\wpinc\plex\post_field\_cb_widgets_init' );
+		}
+	}
 	if ( is_admin() ) {
-		add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
-		add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes' );
-		foreach ( $inst->post_types as $pt ) {
-			add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10, 2 );
+		if ( 'classic' === $inst->editor_type ) {
+			add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
+			add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes' );
+			foreach ( $inst->post_types as $pt ) {
+				add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10, 2 );
+			}
 		}
 	} else {
 		add_filter( 'single_post_title', '\wpinc\plex\post_field\_cb_single_post_title', 10, 2 );
 		add_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
 		add_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
 	}
+}
+
+
+// -----------------------------------------------------------------------------
+
+
+/**
+ * Retrieves the post title.
+ *
+ * @param \WP_Post|null $post The post.
+ * @param string|null   $key  Query key.
+ * @return string Filtered title.
+ */
+function get_the_title( ?\WP_Post $post, ?string $key = null ): string {
+	$inst = _get_instance();
+	$p    = get_post( $post );
+	if (
+		$p instanceof \WP_Post &&
+		in_array( $p->post_type, $inst->post_types, true )
+	) {
+		$t = _get_title( $p, $key );
+		if ( null !== $t ) {
+			return $t;
+		}
+	}
+	return \get_the_title( $post );
+}
+
+/**
+ * Retrieves the post content.
+ *
+ * @param \WP_Post|null $post The post.
+ * @param string|null   $key  Query key.
+ * @return string Filtered content.
+ */
+function get_the_content( ?\WP_Post $post, ?string $key = null ): string {
+	$inst = _get_instance();
+	$p    = get_post( $post );
+	if (
+		$p instanceof \WP_Post &&
+		! post_password_required( $p ) &&
+		in_array( $p->post_type, $inst->post_types, true )
+	) {
+		$c = _get_content( $p, $key );
+		if ( null !== $c ) {
+			return $c;
+		}
+	}
+	return \get_the_content( null, false, $post );
 }
 
 
@@ -93,7 +155,7 @@ function activate( array $args = array() ): void {
  * @return string Filtered title.
  */
 function _cb_single_post_title( string $title, \WP_Post $post ): string {
-	return _get_title( $title, $post->ID, $post );
+	return _cb_the_title( $title, $post->ID );
 }
 
 /**
@@ -106,45 +168,65 @@ function _cb_single_post_title( string $title, \WP_Post $post ): string {
  * @return string Filtered title.
  */
 function _cb_the_title( string $title, int $id ): string {
-	return _get_title( $title, $id, get_post( $id ) );
+	$inst = _get_instance();
+	$p    = get_post( $id );
+	if (
+		$p instanceof \WP_Post &&
+		in_array( $p->post_type, $inst->post_types, true )
+	) {
+		$t = _get_title( $p );
+		if ( null !== $t ) {
+			return $t;
+		}
+	}
+	return $title;
 }
 
 /**
- * Gets post title.
+ * Gets post title from post meta.
  *
  * @access private
  *
- * @param string        $title The post title.
- * @param int           $id    The post ID.
- * @param \WP_Post|null $post  The post.
- * @return string Filtered title.
+ * @param \WP_Post    $post The post.
+ * @param string|null $key  Query key.
+ * @return string Title.
  */
-function _get_title( string $title, int $id, ?\WP_Post $post ): string {
-	if ( null === $post ) {
-		return $title;  // When $id is 0.
-	}
+function _get_title( \WP_Post $post, ?string $key = null ): ?string {
 	$inst = _get_instance();
-	if ( ! in_array( $post->post_type, $inst->post_types, true ) ) {
-		return $title;
+	if ( null === $key ) {
+		$key = \wpinc\plex\get_query_key( $inst->vars );
 	}
-	$key = \wpinc\plex\get_query_key( $inst->vars );
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
-		return $title;
+		return null;
 	}
-	$t = get_post_meta( $id, $inst->key_pre_title . $key, true );
+	$id = isset( $post->ID ) ? $post->ID : 0;
+	$t  = get_post_meta( $id, $inst->key_pre_title . $key, true );
 	if ( empty( $t ) ) {
-		return $title;
+		return null;
 	}
-	$basic_title = $post->post_title;
-	$basic_title = \capital_P_dangit( $basic_title );
-	$basic_title = \wptexturize( $basic_title );
-	$basic_title = \convert_chars( $basic_title );
-	$basic_title = \trim( $basic_title );
-	if ( empty( $basic_title ) ) {
-		return "$title $t";
+
+	if ( ! is_admin() ) {
+		if ( ! empty( $post->post_password ) ) {
+			/* translators: %s: Protected post title. */
+			$f = __( 'Protected: %s' );
+			$f = apply_filters( 'protected_title_format', $f, $post );
+			$t = sprintf( $f, $t );
+		} elseif ( isset( $post->post_status ) && 'private' === $post->post_status ) {
+			/* translators: %s: Private post title. */
+			$f = __( 'Private: %s' );
+			$f = apply_filters( 'private_title_format', $f, $post );
+			$t = sprintf( $f, $t );
+		}
 	}
-	return preg_replace( '/' . preg_quote( $basic_title, '/' ) . '/u', $t, $title );
+	remove_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
+	$t = apply_filters( 'the_title', $t, $id );
+	add_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
+	return $t;
 }
+
+
+// -----------------------------------------------------------------------------
+
 
 /**
  * Callback function for 'the_content' filter.
@@ -157,24 +239,83 @@ function _get_title( string $title, int $id, ?\WP_Post $post ): string {
 function _cb_the_content( string $content ): string {
 	$inst = _get_instance();
 	$p    = get_post();
-	if ( post_password_required( $p ) ) {
-		return get_the_password_form( $p );
+	if (
+		$p instanceof \WP_Post &&
+		! post_password_required( $p ) &&
+		in_array( $p->post_type, $inst->post_types, true )
+	) {
+		$c = _get_content( $p );
+		if ( null !== $c ) {
+			remove_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
+			$c = apply_filters( 'the_content', $c );
+			add_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
+			return $c;
+		}
 	}
-	if ( ! $p || ! in_array( $p->post_type, $inst->post_types, true ) ) {
-		return $content;
+	return $content;
+}
+
+/**
+ * Gets post content from post meta.
+ *
+ * @access private
+ *
+ * @param \WP_Post    $post The post.
+ * @param string|null $key  Query key.
+ * @return string Content.
+ */
+function _get_content( \WP_Post $post, ?string $key = null ): ?string {
+	$inst = _get_instance();
+	if ( null === $key ) {
+		$key = \wpinc\plex\get_query_key( $inst->vars );
 	}
-	$key = \wpinc\plex\get_query_key( $inst->vars );
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
-		return $content;
+		return null;
 	}
-	$c = get_post_meta( $p->ID, $inst->key_pre_content . $key, true );
+	$c = get_post_meta( $post->ID, $inst->key_pre_content . $key, true );
 	if ( empty( $c ) ) {
-		return $content;
+		return null;
 	}
-	remove_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
-	$c = apply_filters( 'the_content', $c );
-	add_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
-	return str_replace( ']]>', ']]&gt;', $c );
+	return $c;
+}
+
+
+// -----------------------------------------------------------------------------
+
+
+/**
+ * Callback function for 'widgets_init' action.
+ */
+function _cb_widgets_init() {
+	if (
+		! function_exists( '\wpinc\blok\field\add_block' ) ||
+		! function_exists( '\wpinc\blok\input\add_block' )
+	) {
+		trigger_error( 'Function \wpinc\blok\field\add_block and \wpinc\blok\input\add_block is required!', E_USER_DEPRECATED );  // phpcs:ignore
+	}
+	$inst = _get_instance();
+	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
+
+	foreach ( $inst->post_types as $pt ) {
+		foreach ( $skc as $key => $slugs ) {
+			$lab_pf = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
+
+			\wpinc\blok\input\add_block(
+				array(
+					'key'       => $inst->key_pre_title . $key,
+					'label'     => _x( 'Title', 'post field', 'wpinc_plex' ) . " $lab_pf",
+					'post_type' => $pt,
+				)
+			);
+			\wpinc\blok\field\add_block(
+				array(
+					'key'       => $inst->key_pre_content . $key,
+					'label'     => _x( 'Content', 'post field', 'wpinc_plex' ) . " $lab_pf",
+					'post_type' => $pt,
+				)
+			);
+		}
+	}
 }
 
 
@@ -339,6 +480,13 @@ function _get_instance(): object {
 		 * @var array
 		 */
 		public $vars = array();
+
+		/**
+		 * Editor type to be activated: 'block' or 'classic'.
+		 *
+		 * @var string
+		 */
+		public $editor_type = '';
 
 		/**
 		 * The post types.
