@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-08-26
+ * @version 2022-11-14
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -187,7 +187,8 @@ function build_norm_path( array $vars = array() ): string {
  * @return string Modified URL.
  */
 function _replace_path( string $url, string $before, string $after ): string {
-	$home = trim( wp_parse_url( \home_url(), PHP_URL_PATH ), '/' );
+	$home = wp_parse_url( \home_url(), PHP_URL_PATH );
+	$home = trim( $home ?? '', '/' );
 	$home = empty( $home ) ? '/' : "/$home/";
 	$pu   = wp_parse_url( $url );
 
@@ -349,7 +350,8 @@ function _parse_request(): array {
 	$pathinfo         = str_replace( '%', '%25', $pathinfo );
 
 	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );  // phpcs:ignore
-	$home_path       = trim( parse_url( \home_url(), PHP_URL_PATH ), '/' );  // phpcs:ignore
+	$home_path       = parse_url( \home_url(), PHP_URL_PATH );  // phpcs:ignore
+	$home_path       = trim( $home_path ?? '', '/' );
 	$home_path_regex = sprintf( '|^%s|i', preg_quote( $home_path, '|' ) );
 
 	$req_uri  = str_replace( $pathinfo, '', $req_uri );
