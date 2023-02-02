@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-11-14
+ * @version 2023-02-02
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -510,9 +510,8 @@ function _cb_request( array $query_vars ): array {
  *
  * @param string $redirect_url  The redirect URL.
  * @param string $requested_url The requested URL.
- * @return string The redirect URL.
  */
-function _cb_redirect_canonical( string $redirect_url, string $requested_url ): string {
+function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
 	$inst = _get_instance();
 	if ( $inst->is_page_not_found ) {
 		return false;
