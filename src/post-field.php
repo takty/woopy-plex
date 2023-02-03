@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-11-01
+ * @version 2023-02-03
  */
 
 namespace wpinc\plex\post_field;
@@ -421,26 +421,32 @@ function _cb_add_meta_boxes(): void {
  */
 function _echo_title_content_field( string $key ): void {
 	global $post;
-	$name        = $inst->key_pre_title . $key;
-	$title       = get_post_meta( $post->ID, $name, true );
+	$inst   = _get_instance();
+	$name_t = $inst->key_pre_title . $key;
+	$name_c = $inst->key_pre_content . $key;
+
+	$title   = get_post_meta( $post->ID, $name_t, true );
+	$content = get_post_meta( $post->ID, $name_c, true );
+
 	$placeholder = apply_filters( 'enter_title_here', __( 'Add title' ), $post );
 	wp_nonce_field( "post_$key", "post_{$key}_nonce" );
 	?>
-<div class="wpinc-plex-post-field-title">
-	<input
-		id="<?php echo esc_attr( $name ); ?>"
-		name="<?php echo esc_attr( $name ); ?>"
-		value="<?php echo esc_attr( $title ); ?>"
-		placeholder="<?php echo esc_attr( $placeholder ); ?>"
-		size="30"
-		type="text"
-		spellcheck="true"
-		autocomplete="off"
-	>
-</div>
+	<div class="wpinc-plex-post-field-title">
+		<input
+			id="<?php echo esc_attr( $name_t ); ?>"
+			name="<?php echo esc_attr( $name_t ); ?>"
+			value="<?php echo esc_attr( $title ); ?>"
+			placeholder="<?php echo esc_attr( $placeholder ); ?>"
+			size="30"
+			type="text"
+			spellcheck="true"
+			autocomplete="off"
+		>
+	</div>
+	<div class="wpinc-plex-post-field-content">
+		<?php wp_editor( $content, $name_c ); ?>
+	</div>
 	<?php
-	$content = get_post_meta( $post->ID, $inst->key_pre_content . $key, true );
-	wp_editor( $content, $inst->key_pre_content . $key );
 }
 
 
