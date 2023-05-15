@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-02-02
+ * @version 2023-05-15
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -523,6 +523,15 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
 		// phpcs:enable
 		if ( $url === $redirect_url ) {
 			return false;  // For avoiding redirect loop.
+		}
+		// When a redirect just for add/remove trailing slash occurs.
+		if ( untrailingslashit( $redirect_url ) === untrailingslashit( $requested_url ) ) {
+			$ts = ( 0 === substr_compare( $redirect_url, '/', -1 ) );
+			if ( $ts ) {
+				$redirect_url = trailingslashit( $url );
+			} else {
+				$redirect_url = untrailingslashit( $url );
+			}
 		}
 	}
 	return $redirect_url;
