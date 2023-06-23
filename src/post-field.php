@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-02-03
+ * @version 2023-06-23
  */
 
 namespace wpinc\plex\post_field;
@@ -27,8 +27,8 @@ function add_post_type( $post_type_s ): void {
 /**
  * Adds an array of slug to label.
  *
- * @param array  $slug_to_label An array of slug to label.
- * @param string $format        A format to assign.
+ * @param array       $slug_to_label An array of slug to label.
+ * @param string|null $format        A format to assign.
  */
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
@@ -189,7 +189,7 @@ function _cb_the_title( string $title, int $id ): string {
  *
  * @param \WP_Post    $post The post.
  * @param string|null $key  Query key.
- * @return string Title.
+ * @return string|null Title.
  */
 function _get_title( \WP_Post $post, ?string $key = null ): ?string {
 	$inst = _get_instance();
@@ -262,7 +262,7 @@ function _cb_the_content( string $content ): string {
  *
  * @param \WP_Post    $post The post.
  * @param string|null $key  Query key.
- * @return string Content.
+ * @return string|null Content.
  */
 function _get_content( \WP_Post $post, ?string $key = null ): ?string {
 	$inst = _get_instance();

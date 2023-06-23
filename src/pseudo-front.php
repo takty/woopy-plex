@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-06-28
+ * @version 2023-06-23
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -18,8 +18,8 @@ const EDIT_PAGE_URL   = 'edit.php?post_type=page';
 /**
  * Adds an array of slug to label.
  *
- * @param array  $slug_to_label An array of slug to label.
- * @param string $format        A format to assign.
+ * @param array       $slug_to_label An array of slug to label.
+ * @param string|null $format        A format to assign.
  */
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
@@ -161,7 +161,7 @@ function _cb_option_page_on_front( string $value ) {
  *
  * @param string $redirect_url  The redirect URL.
  * @param string $requested_url The requested URL.
- * @return string The filtered string.
+ * @return mixed The filtered string.
  */
 function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
 	if ( _get_instance()->suppress_redirect ) {

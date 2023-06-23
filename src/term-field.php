@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-09-21
+ * @version 2023-06-23
  */
 
 namespace wpinc\plex\term_field;
@@ -49,8 +49,8 @@ function add_taxonomy( $taxonomy_s, array $args = array() ): void {
 /**
  * Adds an array of slug to label.
  *
- * @param array  $slug_to_label An array of slug to label.
- * @param string $format        A format to assign.
+ * @param array       $slug_to_label An array of slug to label.
+ * @param string|null $format        A format to assign.
  */
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
