@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-09-29
+ * @version 2023-06-23
  */
 
 namespace wpinc\plex\filter;
@@ -68,7 +68,11 @@ function add_filter_taxonomy( string $var, array $args = array() ): void {
  * @param array  $slug_to_label Array of slugs to label.
  */
 function _insert_terms( string $var, string $tx, array $slug_to_label ): void {
-	$slugs = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) )[0];
+	$temp = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) );
+	if ( empty( $temp ) ) {
+		return;
+	}
+	$slugs = $temp[0];
 	foreach ( $slugs as $slug ) {
 		$t = get_term_by( 'slug', $slug, $tx );
 		if ( false === $t ) {

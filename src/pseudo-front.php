@@ -211,13 +211,14 @@ function _cb_option_blogdescription( string $value ): string {
  * @return string[] The filtered array.
  */
 function _cb_body_class( array $classes ): array {
-	$cs = array_map(
-		function ( $var ) {
-			$val = \wpinc\plex\custom_rewrite\get_query_var( $var );
-			return str_replace( '_', '-', "$var-$val" );
-		},
-		\wpinc\plex\custom_rewrite\get_structures( 'var' )
-	);
+	$cs   = array();
+	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var' );
+	foreach ( $vars as $var ) {
+		$val = \wpinc\plex\custom_rewrite\get_query_var( $var );
+		if ( ! empty( $val ) ) {
+			$cs[] = str_replace( '_', '-', "$var-$val" );
+		}
+	}
 	return array_merge( $classes, $cs );
 }
 
