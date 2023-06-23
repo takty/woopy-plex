@@ -367,14 +367,15 @@ function _cb_admin_head(): void {
 	?>
 <style>
 	.wpinc-plex-post-field-title input {
-		margin          : 0 0 6px;
-		padding         : 3px 8px;
-		width           : 100%;
-		height          : 1.7em;
+		width  : 100%;
+		height : 1.7em;
+		margin : 0 0 6px;
+		padding: 3px 8px;
+
 		font-size       : 1.7em;
 		line-height     : 100%;
 		background-color: #fff;
-		outline         : 0;
+		outline         : none;
 	}
 </style>
 	<?php
