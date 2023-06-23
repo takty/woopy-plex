@@ -30,14 +30,19 @@ function add_structure( array $args ): void {
 		'omittable'    => false,
 		'global'       => false,
 	);
-	if ( empty( $args['var'] ) || empty( $args['slugs'] ) ) {
-		wp_die( '$args[\'var\'] and $args[\'slugs\'] must be assigned' );
+	if ( empty( $args['var'] ) ) {
+		wp_die( '$args[\'var\'] must be assigned.' );
 	}
-	if ( ! is_array( $args['slugs'] ) || ! in_array( $args['default_slug'], $args['slugs'], true ) ) {
-		wp_die( '$args[\'default_slug\'] must be an element of $args[\'slugs\']' );
+	if ( ! is_array( $args['slugs'] ) || empty( $args['slugs'] ) ) {
+		wp_die( '$args[\'slugs\'] must be a non-empty array.' );
 	}
-	if ( $args['omittable'] && empty( $args['default_slug'] ) ) {
-		$args['default_slug'] = $args['slugs'][0];
+	if ( $args['omittable'] ) {
+		if ( ! empty( $args['default_slug'] ) && ! in_array( $args['default_slug'], $args['slugs'], true ) ) {
+			wp_die( '$args[\'default_slug\'] must be an element of $args[\'slugs\'] when omittable.' );
+		}
+		if ( empty( $args['default_slug'] ) ) {
+			$args['default_slug'] = $args['slugs'][0];
+		}
 	}
 	_get_instance()->structures[] = $args;
 }
@@ -146,7 +151,14 @@ function build_full_path( array $vars = array() ): string {
 
 	$vars += $inst->vars;
 	foreach ( $inst->structures as $st ) {
-		$v    = empty( $vars[ $st['var'] ] ) ? $st['default_slug'] : $vars[ $st['var'] ];
+		if ( empty( $vars[ $st['var'] ] ) ) {
+			if ( ! $st['omittable'] ) {
+				break;
+			}
+			$v = $st['default_slug'];
+		} else {
+			$v = $vars[ $st['var'] ];
+		}
 		$ps[] = $v;
 	}
 	return implode( '/', $ps );
