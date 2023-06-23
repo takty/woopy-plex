@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-05-15
+ * @version 2023-06-23
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -33,7 +33,7 @@ function add_structure( array $args ): void {
 	if ( empty( $args['var'] ) || empty( $args['slugs'] ) ) {
 		wp_die( '$args[\'var\'] and $args[\'slugs\'] must be assigned' );
 	}
-	if ( ! in_array( $args['default_slug'], $args['slugs'], true ) ) {
+	if ( ! is_array( $args['slugs'] ) || ! in_array( $args['default_slug'], $args['slugs'], true ) ) {
 		wp_die( '$args[\'default_slug\'] must be an element of $args[\'slugs\']' );
 	}
 	if ( $args['omittable'] && empty( $args['default_slug'] ) ) {
