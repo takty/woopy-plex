@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-06-23
+ * @version 2023-06-27
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -275,9 +275,12 @@ function _cb_admin_init(): void {
 		);
 	}
 	if ( $inst->do_set_page_on_front_option ) {
-		$fp = get_page_by_path( \wpinc\plex\custom_rewrite\build_full_path() );
-		if ( $fp ) {
-			update_option( 'page_on_front', $fp->ID );
+		$path = \wpinc\plex\custom_rewrite\build_full_path();
+		if ( ! empty( $path ) ) {
+			$fp = get_page_by_path( $path );
+			if ( $fp ) {
+				update_option( 'page_on_front', $fp->ID );
+			}
 		}
 	}
 }
