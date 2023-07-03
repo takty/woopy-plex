@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-06-27
+ * @version 2023-07-03
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -73,6 +73,7 @@ function activate( array $args = array() ): void {
 		add_filter( 'admin_head', '\wpinc\plex\pseudo_front\_cb_admin_head' );
 	} else {
 		add_filter( 'option_page_on_front', '\wpinc\plex\pseudo_front\_cb_option_page_on_front' );
+		add_filter( 'page_link', '\wpinc\plex\pseudo_front\_cb_page_link', 9, 2 );  // Add a hook before that of custom-rewrite.
 		add_filter( 'redirect_canonical', '\wpinc\plex\pseudo_front\_cb_redirect_canonical', 1, 2 );
 
 		add_filter( 'option_blogname', '\wpinc\plex\pseudo_front\_cb_option_blogname' );
@@ -147,11 +148,49 @@ function _cb_option_page_on_front( string $value ) {
 	$fp = get_page_by_path( \wpinc\plex\custom_rewrite\build_full_path() );
 	global $post;
 	if ( $fp && $post && $fp->ID === $post->ID ) {
-		$value = $fp->ID;
+		$inst->original_page_on_front = (int) $value;
+		$inst->suppress_redirect      = true;
 
-		$inst->suppress_redirect = true;
+		$value = $fp->ID;
 	}
 	return $value;
+}
+
+/**
+ * Callback function for 'page_link' filter.
+ *
+ * @access private
+ *
+ * @param string $link    The page's permalink.
+ * @param int    $post_id The ID of the page.
+ * @return string The filtered URL.
+ */
+function _cb_page_link( string $link, int $post_id ): string {
+	$inst = _get_instance();
+	if ( $inst->suppress_redirect && 'page' === get_option( 'show_on_front' ) ) {
+		if ( $post_id === $inst->original_page_on_front ) {
+			$link = \home_url( '/' );
+		} else {
+			$link = _get_raw_page_link( $post_id );
+		}
+	}
+	return $link;
+}
+
+/**
+ * Retrieves raw page link.
+ *
+ * @access private
+ *
+ * @param int $post_id The ID of the page.
+ * @return string The raw page link.
+ */
+function _get_raw_page_link( int $post_id ): string {
+	global $wp_rewrite;
+	$struct = $wp_rewrite->get_page_permastruct();
+	$path   = get_page_uri( get_post( $post_id ) );
+	$link   = \home_url( str_replace( '%pagename%', $path, $struct ) );
+	return user_trailingslashit( $link, 'page' );
 }
 
 /**
@@ -526,6 +565,13 @@ function _get_instance(): object {
 		 * @var bool
 		 */
 		public $suppress_redirect = false;
+
+		/**
+		 * Original value of page_on_front when that is replaced.
+		 *
+		 * @var int
+		 */
+		public $original_page_on_front = 0;
 	};
 	return $values;
 }
