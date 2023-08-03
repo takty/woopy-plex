@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-07-03
+ * @version 2023-08-03
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -407,6 +407,9 @@ function _cb_submenu_file( ?string $submenu_file, string $parent_file ): ?string
  * @param \WP_Query $query The WP_Query instance (passed by reference).
  */
 function _cb_parse_query( \WP_Query $query ): void {
+	if ( ! $query->is_main_query() ) {
+		return;
+	}
 	global $pagenow;
 	if ( 'edit.php' !== $pagenow ) {
 		return;
@@ -425,7 +428,7 @@ function _cb_parse_query( \WP_Query $query ): void {
 	$ids   = array_reverse( get_post_ancestors( $page_id ) );
 	$ids[] = $page_id;
 
-	$ps = get_pages(
+	$ps = get_pages(  // In this function, parse_query and 'parse_query' hook is called since 6.3.
 		array(
 			'child_of'    => $page_id,
 			'sort_column' => 'menu_order',
