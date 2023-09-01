@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2022-01-16
+ * @version 2023-08-31
  */
 
 namespace wpinc\plex;
@@ -14,7 +14,7 @@ require_once __DIR__ . '/custom-rewrite.php';
 /**
  * Retrieves the key of default query variables.
  *
- * @param array|null $vars (Optional) Variable names for filtering.
+ * @param string[]|null $vars (Optional) Variable names for filtering.
  * @return string The key string.
  */
 function get_default_key( ?array $vars = null ): string {
@@ -31,7 +31,7 @@ function get_default_key( ?array $vars = null ): string {
 /**
  * Retrieves the key of current query variables.
  *
- * @param array|null $vars (Optional) Variable names for filtering.
+ * @param string[]|null $vars (Optional) Variable names for filtering.
  * @return string The key string.
  */
 function get_query_key( ?array $vars = null ): string {
@@ -57,8 +57,8 @@ function get_query_key( ?array $vars = null ): string {
 /**
  * Retrieves the key of argument variables.
  *
- * @param mixed      $args An array of variable name to slugs.
- * @param array|null $vars (Optional) Variable names for filtering.
+ * @param array<string, string>|string|null $args An array of variable name to slugs.
+ * @param string[]|null                     $vars (Optional) Variable names for filtering.
  * @return string The key string.
  */
 function get_argument_key( $args, ?array $vars = null ): string {
@@ -66,7 +66,7 @@ function get_argument_key( $args, ?array $vars = null ): string {
 		$key = implode(
 			'_',
 			array_map(
-				function ( $var ) use ( $args, $vars ) {
+				function ( $var ) use ( $args ) {
 					return $args[ $var ] ?? custom_rewrite\get_query_var( $var );
 				},
 				custom_rewrite\get_structures( 'var', $vars )
@@ -88,9 +88,9 @@ function get_argument_key( $args, ?array $vars = null ): string {
 /**
  * Generates an array of slug key to slug combinations.
  *
- * @param array|null $vars               (Optional) Variable names for filtering.
- * @param bool       $is_default_omitted (Optional) Whether the default key is omitted.
- * @return array The array of slug key to slug combinations.
+ * @param string[]|null $vars               (Optional) Variable names for filtering.
+ * @param bool          $is_default_omitted (Optional) Whether the default key is omitted.
+ * @return array<string, string[]> The array of slug key to slug combinations.
  */
 function get_slug_key_to_combination( ?array $vars = null, bool $is_default_omitted = false ): array {
 	$dy  = get_default_key( $vars );
@@ -110,8 +110,8 @@ function get_slug_key_to_combination( ?array $vars = null, bool $is_default_omit
 /**
  * Generates slug combinations.
  *
- * @param array|null $vars (Optional) Variable names for filtering.
- * @return array The array of slug combinations.
+ * @param string[]|null $vars (Optional) Variable names for filtering.
+ * @return array<string[]> The array of slug combinations.
  */
 function get_slug_combination( ?array $vars = null ): array {
 	static $ret = array();
@@ -134,8 +134,8 @@ function get_slug_combination( ?array $vars = null ): array {
  *
  * @access private
  *
- * @param array $arrays An array of string arrays.
- * @return array The array of combinations.
+ * @param array<string[]> $arrays An array of string arrays.
+ * @return array<string[]> The array of combinations.
  */
 function _generate_combination( array $arrays ): array {
 	$counts = array_map( 'count', $arrays );
@@ -168,9 +168,9 @@ function _generate_combination( array $arrays ): array {
  *
  * @access private
  *
- * @param string[]    $slugs         The slug combination.
- * @param array       $slug_to_label The array of slug to label.
- * @param string|null $filter        The label format.
+ * @param string[]              $slugs         The slug combination.
+ * @param array<string, string> $slug_to_label The array of slug to label.
+ * @param string|null           $filter        The label format.
  * @return string The label string.
  */
 function get_admin_label( array $slugs, array $slug_to_label, ?string $filter = null ): string {

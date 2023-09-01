@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-06-23
+ * @version 2023-08-31
  */
 
 namespace wpinc\plex\filter;
@@ -16,8 +16,8 @@ require_once __DIR__ . '/slug-key.php';
 /**
  * Registers taxonomy used for filter.
  *
- * @param string $var  The query variable name related to the taxonomy.
- * @param array  $args {
+ * @param string               $var  The query variable name related to the taxonomy.
+ * @param array<string, mixed> $args {
  *     Configuration arguments.
  *
  *     @type string 'taxonomy'        The taxonomy used for filter. Default the same as $var.
@@ -45,7 +45,7 @@ function add_filter_taxonomy( string $var, array $args = array() ): void {
 	$slug_to_label   = $args['slug_to_label'];
 	unset( $args['taxonomy'], $args['do_insert_terms'], $args['slug_to_label'] );
 
-	register_taxonomy( $tx, null, $args );
+	register_taxonomy( $tx, '', $args );
 
 	if ( $do_insert_terms ) {
 		_insert_terms( $var, $tx, $slug_to_label );
@@ -63,9 +63,9 @@ function add_filter_taxonomy( string $var, array $args = array() ): void {
  *
  * @access private
  *
- * @param string $var           The query variable name related to the taxonomy.
- * @param string $tx            Taxonomy.
- * @param array  $slug_to_label Array of slugs to label.
+ * @param string                $var           The query variable name related to the taxonomy.
+ * @param string                $tx            Taxonomy.
+ * @param array<string, string> $slug_to_label Array of slugs to label.
  */
 function _insert_terms( string $var, string $tx, array $slug_to_label ): void {
 	$temp = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) );
@@ -114,7 +114,7 @@ function add_counted_taxonomy( $taxonomy_s ): void {
 /**
  * Activates the post filter.
  *
- * @param array $args {
+ * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
  *
  *     @type string 'count_key_prefix' Key prefix of term count. Default '_count_'.
@@ -151,7 +151,7 @@ function activate( array $args = array() ): void {
  *
  * @access private
  *
- * @return array The ids.
+ * @return \WP_Term[] The terms.
  */
 function _get_query_terms(): array {
 	$ret  = array();
@@ -161,7 +161,7 @@ function _get_query_terms(): array {
 	foreach ( $vars as $var ) {
 		$tx = $inst->var_to_tx[ $var ];
 		$t  = get_term_by( 'slug', \wpinc\plex\custom_rewrite\get_query_var( $var ), $tx );
-		if ( $t ) {
+		if ( $t instanceof \WP_Term ) {
 			$ret[] = $t;
 		}
 	}
@@ -173,9 +173,9 @@ function _get_query_terms(): array {
  *
  * @access private
  *
- * @param array         $query_vars The query vars.
- * @param \WP_Post|null $post       The post in question.
- * @return array The filtered vars.
+ * @param array<string, mixed> $query_vars The query vars.
+ * @param \WP_Post|null        $post       The post in question.
+ * @return array<string, mixed> The filtered vars.
  */
 function _cb_post_link_filter( array $query_vars, ?\WP_Post $post = null ): array {
 	$inst = _get_instance();
@@ -185,6 +185,7 @@ function _cb_post_link_filter( array $query_vars, ?\WP_Post $post = null ): arra
 	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
 
 	foreach ( $vars as $var ) {
+		$var   = (string) $var;
 		$terms = get_the_terms( $post->ID, $inst->var_to_tx[ $var ] );
 		if ( ! is_array( $terms ) ) {
 			continue;
@@ -231,10 +232,16 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 				'hide_empty' => false,
 			)
 		);
+		if ( is_wp_error( $tars ) ) {
+			return;
+		}
 	}
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars );
 
 	foreach ( $tars as $tar ) {
+		if ( ! ( $tar instanceof \WP_Term ) ) {
+			continue;
+		}
 		$tt_id   = $tar->term_taxonomy_id;
 		$term_id = $tar->term_id;
 
@@ -242,7 +249,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 			$tts = array( $tt_id );
 			foreach ( $txs as $idx => $tx ) {
 				$t = get_term_by( 'slug', $slugs[ $idx ], $tx );
-				if ( $t && $tt_id !== $t->term_taxonomy_id ) {
+				if ( $t instanceof \WP_Term && $tt_id !== $t->term_taxonomy_id ) {
 					$tts[] = $t->term_taxonomy_id;
 				}
 			}
@@ -272,28 +279,28 @@ function _get_instance(): object {
 		/**
 		 * The array of variable names.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $vars = array();
 
 		/**
 		 * The array of variable name to taxonomy.
 		 *
-		 * @var array
+		 * @var array<string, string>
 		 */
 		public $var_to_tx = array();
 
 		/**
 		 * The filtered post types.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $post_types = array();
 
 		/**
 		 * The counted taxonomies.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $txs_counted = array();
 

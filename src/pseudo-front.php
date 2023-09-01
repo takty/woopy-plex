@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-08-03
+ * @version 2023-08-31
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -18,8 +18,8 @@ const EDIT_PAGE_URL   = 'edit.php?post_type=page';
 /**
  * Adds an array of slug to label.
  *
- * @param array       $slug_to_label An array of slug to label.
- * @param string|null $format        A format to assign.
+ * @param array<string, string> $slug_to_label An array of slug to label.
+ * @param string|null           $format        A format to assign.
  */
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
@@ -33,7 +33,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 /**
  * Activates the pseudo-front.
  *
- * @param array $args {
+ * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
  *
  *     @type bool 'has_default_front_bloginfo'  Whether the site has the default front bloginfo. Default true.
@@ -66,11 +66,11 @@ function activate( array $args = array() ): void {
 
 		add_filter( 'query_vars', '\wpinc\plex\pseudo_front\_cb_query_vars' );
 		add_action( 'admin_menu', '\wpinc\plex\pseudo_front\_cb_admin_menu' );
-		add_action( 'submenu_file', '\wpinc\plex\pseudo_front\_cb_submenu_file', 10, 2 );
+		add_filter( 'submenu_file', '\wpinc\plex\pseudo_front\_cb_submenu_file', 10, 2 );
 		add_action( 'parse_query', '\wpinc\plex\pseudo_front\_cb_parse_query' );
 
 		add_filter( 'display_post_states', '\wpinc\plex\pseudo_front\_cb_display_post_states', 10, 2 );
-		add_filter( 'admin_head', '\wpinc\plex\pseudo_front\_cb_admin_head' );
+		add_action( 'admin_head', '\wpinc\plex\pseudo_front\_cb_admin_head' );
 	} else {
 		add_filter( 'option_page_on_front', '\wpinc\plex\pseudo_front\_cb_option_page_on_front' );
 		add_filter( 'page_link', '\wpinc\plex\pseudo_front\_cb_page_link', 9, 2 );  // Add a hook before that of custom-rewrite.
@@ -89,11 +89,11 @@ function activate( array $args = array() ): void {
 /**
  * Retrieves the URL for the current site where the front end is accessible.
  *
- * @param string      $path   (Optional) Path relative to the home URL.
- *                            Default ''.
- * @param string|null $scheme (Optional) Scheme to give the home URL context.
- *                            Accepts 'http', 'https', 'relative', 'rest', or null.
- * @param array       $vars   (Optional) An array of variable name to slug.
+ * @param string                $path   (Optional) Path relative to the home URL.
+ *                                      Default ''.
+ * @param string|null           $scheme (Optional) Scheme to give the home URL context.
+ *                                      Accepts 'http', 'https', 'relative', 'rest', or null.
+ * @param array<string, string> $vars   (Optional) An array of variable name to slug.
  * @return string Home URL link with optional path appended.
  */
 function home_url( string $path = '', ?string $scheme = null, array $vars = array() ): string {
@@ -139,10 +139,10 @@ function _get_front_page_ids(): array {
  * @access private
  * @global \WP_Post $post
  *
- * @param string $value Value of the option.
- * @return string The filtered string.
+ * @param mixed $value Value of the option.
+ * @return mixed The filtered string.
  */
-function _cb_option_page_on_front( string $value ) {
+function _cb_option_page_on_front( $value ) {
 	$inst = _get_instance();
 
 	$fp = get_page_by_path( \wpinc\plex\custom_rewrite\build_full_path() );
@@ -171,7 +171,10 @@ function _cb_page_link( string $link, int $post_id ): string {
 		if ( $post_id === $inst->original_page_on_front ) {
 			$link = \home_url( '/' );
 		} else {
-			$link = _get_raw_page_link( $post_id );
+			$temp = _get_raw_page_link( $post_id );
+			if ( $temp ) {
+				$link = $temp;
+			}
 		}
 	}
 	return $link;
@@ -183,13 +186,20 @@ function _cb_page_link( string $link, int $post_id ): string {
  * @access private
  *
  * @param int $post_id The ID of the page.
- * @return string The raw page link.
+ * @return string|null The raw page link.
  */
-function _get_raw_page_link( int $post_id ): string {
+function _get_raw_page_link( int $post_id ): ?string {
 	global $wp_rewrite;
 	$struct = $wp_rewrite->get_page_permastruct();
-	$path   = get_page_uri( get_post( $post_id ) );
-	$link   = \home_url( str_replace( '%pagename%', $path, $struct ) );
+	$p      = get_post( $post_id );
+	if ( ! $p ) {
+		return null;
+	}
+	$path = get_page_uri( $p );
+	if ( ! $path ) {
+		return null;
+	}
+	$link = \home_url( str_replace( '%pagename%', $path, $struct ) );
 	return user_trailingslashit( $link, 'page' );
 }
 
@@ -435,8 +445,10 @@ function _cb_parse_query( \WP_Query $query ): void {
 			'post_status' => 'publish,future,draft,pending,private',
 		)
 	);
-	foreach ( $ps as $p ) {
-		$ids[] = $p->ID;
+	if ( $ps ) {
+		foreach ( $ps as $p ) {
+			$ids[] = $p->ID;
+		}
 	}
 	$query->set( 'post__in', $ids );
 	$query->set( 'orderby', 'post__in' );
@@ -474,7 +486,7 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 function _cb_admin_head(): void {
 	echo '<style>';
 	foreach ( _get_front_page_ids() as $id ) {
-		echo "body.post-type-page select#parent_id option[value='" . esc_attr( $id ) . "']{font-weight:bold;}\n";
+		echo "body.post-type-page select#parent_id option[value='" . esc_attr( (string) $id ) . "']{font-weight:bold;}\n";
 	}
 	echo '</style>';
 	?>
@@ -537,7 +549,7 @@ function _get_instance(): object {
 		/**
 		 * The array of slug to label.
 		 *
-		 * @var array
+		 * @var array<string, string>
 		 */
 		public $slug_to_label = array();
 

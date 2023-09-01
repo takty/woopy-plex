@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-06-23
+ * @version 2023-09-01
  */
 
 namespace wpinc\plex\term_field;
@@ -15,8 +15,8 @@ require_once __DIR__ . '/slug-key.php';
 /**
  * Adds taxonomy.
  *
- * @param string|string[] $taxonomy_s Taxonomy slugs.
- * @param array           $args {
+ * @param string|string[]      $taxonomy_s Taxonomy slugs.
+ * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
  *
  *     @type bool 'has_singular_name'         Whether the terms has singular names.
@@ -26,7 +26,7 @@ require_once __DIR__ . '/slug-key.php';
  */
 function add_taxonomy( $taxonomy_s, array $args = array() ): void {
 	$inst = _get_instance();
-	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
+	$txs  = (array) $taxonomy_s;
 
 	$args += array(
 		'has_singular_name'         => false,
@@ -49,8 +49,8 @@ function add_taxonomy( $taxonomy_s, array $args = array() ): void {
 /**
  * Adds an array of slug to label.
  *
- * @param array       $slug_to_label An array of slug to label.
- * @param string|null $format        A format to assign.
+ * @param array<string, string> $slug_to_label An array of slug to label.
+ * @param string|null           $format        A format to assign.
  */
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
@@ -66,7 +66,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
  *
  * @global string $pagenow
  *
- * @param array $args {
+ * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
  *
  *     @type array  'vars'                      Query variable names.
@@ -98,7 +98,7 @@ function activate( array $args = array() ): void {
 	$inst->key_default_sg_name = $args['default_singular_name_key'];
 
 	global $pagenow;
-	if ( ! is_admin() || ( is_admin() && in_array( $pagenow, array( 'post-new.php', 'post.php', 'edit.php' ), true ) ) ) {
+	if ( ! is_admin() || in_array( $pagenow, array( 'post-new.php', 'post.php', 'edit.php' ), true ) ) {
 		add_filter( 'get_object_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
 		add_filter( 'get_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
 		foreach ( $inst->txs as $tx ) {
@@ -168,7 +168,7 @@ function term_description( int $term_id = 0, $args = null ) {
 	$key  = \wpinc\plex\get_argument_key( $args, $inst->vars );
 	$ret  = '';
 
-	if ( $term_id && in_array( $tx, $inst->txs, true ) ) {
+	if ( $term_id && is_int( $term_id ) && in_array( $tx, $inst->txs, true ) ) {
 		if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
 			$ret = get_term_meta( $term_id, $inst->key_pre_description . $key, true );
 		}
@@ -187,7 +187,7 @@ function term_description( int $term_id = 0, $args = null ) {
  * Retrieves term ID and taxonomy.
  *
  * @param int $term_id (Optional) Term ID. Defaults to the current term ID.
- * @return array An array of term ID and taxonomy.
+ * @return array{int, string} An array of term ID and taxonomy.
  */
 function _get_term_id_taxonomy( int $term_id = 0 ): array {
 	if ( ! $term_id && ( is_tax() || is_tag() || is_category() ) ) {
@@ -210,7 +210,7 @@ function _get_term_id_taxonomy( int $term_id = 0 ): array {
  *
  * @access private
  *
- * @param \WP_Term[] $terms Array of found terms.
+ * @param array<\WP_Term> $terms Array of found terms.
  * @return \WP_Term[] The filtered terms.
  */
 function _cb_get_terms( array $terms ): array {
@@ -219,7 +219,7 @@ function _cb_get_terms( array $terms ): array {
 
 	$ts = array();
 	foreach ( $terms as $t ) {
-		$ts[] = ( $t instanceof \WP_Term ) ? $t : get_term( $t );
+		$ts[] = get_term( $t );
 	}
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
@@ -228,7 +228,7 @@ function _cb_get_terms( array $terms ): array {
 				( $t instanceof \WP_Term ) &&
 				in_array( $t->taxonomy, $inst->txs_default_sg_name, true )
 			) {
-				_add_singular_name( $t, $t->taxonomy, $inst );
+				_add_singular_name( $t, $t->taxonomy );
 			}
 		}
 	} else {
@@ -237,7 +237,7 @@ function _cb_get_terms( array $terms ): array {
 				( $t instanceof \WP_Term ) &&
 				in_array( $t->taxonomy, $inst->txs, true )
 			) {
-				_replace_name( $t, $t->taxonomy, $inst, $key );
+				_replace_name( $t, $t->taxonomy, $key );
 			}
 		}
 	}
@@ -258,10 +258,10 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		if ( in_array( $t->taxonomy, $inst->txs_default_sg_name, true ) ) {
-			_add_singular_name( $t, $t->taxonomy, $inst );
+			_add_singular_name( $t, $t->taxonomy );
 		}
 	} else {
-		_replace_name( $t, $t->taxonomy, $inst, $key );
+		_replace_name( $t, $t->taxonomy, $key );
 	}
 	return $t;
 }
@@ -273,10 +273,10 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
  *
  * @param \WP_Term $t        Term object.
  * @param string   $taxonomy The taxonomy slug.
- * @param object   $inst     The instance of plex\term_field.
  * @param string   $key      The key of term metadata.
  */
-function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key ): void {
+function _replace_name( \WP_Term $t, string $taxonomy, string $key ): void {
+	$inst = _get_instance();
 	if ( isset( $t->orig_name ) ) {
 		return;
 	}
@@ -301,9 +301,9 @@ function _replace_name( \WP_Term $t, string $taxonomy, object $inst, string $key
  *
  * @param \WP_Term $t        Term object.
  * @param string   $taxonomy The taxonomy slug.
- * @param object   $inst     The instance of plex\term_field.
  */
-function _add_singular_name( \WP_Term $t, string $taxonomy, object $inst ): void {
+function _add_singular_name( \WP_Term $t, string $taxonomy ): void {
+	$inst = _get_instance();
 	if ( ! isset( $t->singular_name ) ) {
 		$sn = get_term_meta( $t->term_id, $inst->key_default_sg_name, true );
 
@@ -349,6 +349,7 @@ function _cb_taxonomy_description( $value, int $term_id, string $context ) {
  *
  * @param string $field   Term field to fetch.
  * @param int    $term_id Term ID.
+ * @return mixed A value of specified field.
  */
 function _get_term_field( string $field, int $term_id ) {
 	$t = \WP_Term::get_instance( $term_id );
@@ -386,7 +387,7 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ): void {
 		$lab_n  = "$lab_base_n $lab_pf";
 
 		$id_name_sn = $inst->key_default_sg_name;
-		$val_sn     = isset( $t_meta[ $id_sn ] ) ? $t_meta[ $id_sn ][0] : '';
+		$val_sn     = isset( $t_meta[ $id_name_sn ] ) ? $t_meta[ $id_name_sn ][0] : '';
 		_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'wpinc_plex' ), $id_name_sn, $id_name_sn, $val_sn );
 	}
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
@@ -534,7 +535,7 @@ function _get_instance(): object {
 		/**
 		 * The array of slug to label.
 		 *
-		 * @var array
+		 * @var array<string, string>
 		 */
 		public $slug_to_label = array();
 
@@ -548,7 +549,7 @@ function _get_instance(): object {
 		/**
 		 * The array of variable names.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $vars = array();
 
@@ -583,28 +584,28 @@ function _get_instance(): object {
 		/**
 		 * The taxonomies with custom names.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $txs = array();
 
 		/**
 		 * The taxonomies with custom singular names.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $txs_sg_name = array();
 
 		/**
 		 * The taxonomies with a custom singular name for default name.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $txs_default_sg_name = array();
 
 		/**
 		 * The taxonomies with custom descriptions.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $txs_description = array();
 	};

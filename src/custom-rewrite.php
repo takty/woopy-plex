@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-06-23
+ * @version 2023-09-01
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -12,7 +12,7 @@ namespace wpinc\plex\custom_rewrite;
 /**
  * Adds a rewrite structure.
  *
- * @param array $args {
+ * @param array<string, mixed> $args {
  *     Rewrite structure arguments.
  *
  *     @type string   'var'          Name of the variable.
@@ -109,9 +109,9 @@ function get_query_var( string $var, string $default = '' ): string {
 /**
  * Retrieves rewrite structures.
  *
- * @param string|null $field (Optional) Field of rewrite structure args.
- * @param array|null  $vars  (Optional) Variable names for filtering.
- * @return mixed|array Rewrite structures.
+ * @param string|null   $field (Optional) Field of rewrite structure args.
+ * @param string[]|null $vars  (Optional) Variable names for filtering.
+ * @return mixed|array<string, mixed> Rewrite structures.
  */
 function get_structures( ?string $field = null, ?array $vars = null ) {
 	$structs = _get_instance()->structures;
@@ -133,7 +133,7 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
 /**
  * Retrieves invalid pagename.
  *
- * @return array|null Invalid pagename.
+ * @return array<string|null>|null Invalid pagename.
  */
 function get_invalid_pagename(): ?array {
 	return _get_instance()->invalid_pagename;
@@ -200,7 +200,7 @@ function build_norm_path( array $vars = array() ): string {
  */
 function _replace_path( string $url, string $before, string $after ): string {
 	$home = wp_parse_url( \home_url(), PHP_URL_PATH );
-	$home = trim( $home ?? '', '/' );
+	$home = is_string( $home ) ? trim( $home, '/' ) : '';
 	$home = empty( $home ) ? '/' : "/$home/";
 	$pu   = wp_parse_url( $url );
 
@@ -234,7 +234,7 @@ function _replace_path( string $url, string $before, string $after ): string {
  * @access private
  *
  * @param string $url URL.
- * @return array An array of variable name to slug.
+ * @return array{array<string, mixed>, string} An array of variable name to slug.
  */
 function _extract_vars( string $url ): array {
 	list( $path ) = explode( '?', $url );
@@ -245,13 +245,14 @@ function _extract_vars( string $url ): array {
 	$p    = array_shift( $ps );
 
 	foreach ( _get_instance()->structures as $st ) {
+		$var = (string) $st['var'];
 		if ( in_array( $p, $st['slugs'], true ) ) {
-			$vars[ $st['var'] ] = $p;
-			$sps[]              = $p;
+			$vars[ $var ] = $p;
+			$sps[]        = $p;
 
 			$p = array_shift( $ps );
 		} else {
-			$vars[ $st['var'] ] = $st['omittable'] ? $st['default_slug'] : null;
+			$vars[ $var ] = $st['omittable'] ? $st['default_slug'] : null;
 		}
 	}
 	return array( $vars, implode( '/', $sps ) );
@@ -322,10 +323,11 @@ function _cb_after_setup_theme(): void {
 
 			if ( is_user_logged_in() ) {
 				list(, $pn_orig ) = _is_page_request( $req, $req_file );
-
-				$post_orig = get_page_by_path( $pn_orig );
-				if ( ! empty( $pn_orig ) && $post_orig ) {
-					$inst->invalid_pagename = array( $pn_orig, $pn_added );
+				if ( $pn_orig ) {
+					$post_orig = get_page_by_path( $pn_orig );
+					if ( $post_orig ) {
+						$inst->invalid_pagename = array( $pn_orig, $pn_added );
+					}
 				}
 			}
 		}
@@ -349,7 +351,7 @@ function _cb_after_setup_theme(): void {
  * @see WP::parse_request()
  * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
  *
- * @return array Array of requested path and requested file.
+ * @return string[] Array of requested path and requested file.
  */
 function _parse_request(): array {
 	global $wp_rewrite;
@@ -363,16 +365,16 @@ function _parse_request(): array {
 
 	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );  // phpcs:ignore
 	$home_path       = parse_url( \home_url(), PHP_URL_PATH );  // phpcs:ignore
-	$home_path       = trim( $home_path ?? '', '/' );
+	$home_path       = is_string( $home_path ) ? trim( $home_path, '/' ) : '';
 	$home_path_regex = sprintf( '|^%s|i', preg_quote( $home_path, '|' ) );
 
 	$req_uri  = str_replace( $pathinfo, '', $req_uri );
 	$req_uri  = trim( $req_uri, '/' );
 	$req_uri  = preg_replace( $home_path_regex, '', $req_uri );
-	$req_uri  = trim( $req_uri, '/' );
+	$req_uri  = trim( $req_uri ?? '', '/' );
 	$pathinfo = trim( $pathinfo, '/' );
 	$pathinfo = preg_replace( $home_path_regex, '', $pathinfo );
-	$pathinfo = trim( $pathinfo, '/' );
+	$pathinfo = trim( $pathinfo ?? '', '/' );
 
 	if ( ! empty( $pathinfo ) && ! preg_match( '|^.*' . $wp_rewrite->index . '$|', $pathinfo ) ) {
 		$req_path = $pathinfo;
@@ -412,7 +414,7 @@ function _register_globals(): void {
  */
 function _str_replace_one( string $search, string $replace, string $subject ): string {
 	$s = preg_quote( $search, '/' );
-	return preg_replace( "/$s/", $replace, $subject, 1 );
+	return preg_replace( "/$s/", $replace, $subject, 1 ) ?? $subject;
 }
 
 /**
@@ -423,7 +425,7 @@ function _str_replace_one( string $search, string $replace, string $subject ): s
  *
  * @param string $req_path Requested path.
  * @param string $req_file Requested file.
- * @return array Array of boolean value and pagename.
+ * @return array{bool, string|null} Array of boolean value and pagename.
  */
 function _is_page_request( string $req_path, string $req_file ): array {
 	if ( empty( $req_path ) ) {
@@ -505,8 +507,8 @@ function _replace_request( string $req_path, string $after ): void {
  *
  * @access private
  *
- * @param array $query_vars The array of requested query variables.
- * @return array The filtered array.
+ * @param array<string, mixed> $query_vars The array of requested query variables.
+ * @return array<string, mixed> The filtered array.
  */
 function _cb_request( array $query_vars ): array {
 	if ( _get_instance()->is_page_not_found ) {
@@ -522,6 +524,7 @@ function _cb_request( array $query_vars ): array {
  *
  * @param string $redirect_url  The redirect URL.
  * @param string $requested_url The requested URL.
+ * @return string|false Filtered URL.
  */
 function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
 	$inst = _get_instance();
@@ -636,7 +639,7 @@ function _get_instance(): object {
 		/**
 		 * The rewrite structures.
 		 *
-		 * @var array
+		 * @var array<string, mixed>[]
 		 */
 		public $structures = array();
 
@@ -664,7 +667,7 @@ function _get_instance(): object {
 		/**
 		 * The invalid pagename data.
 		 *
-		 * @var string[]
+		 * @var array<string|null>
 		 */
 		public $invalid_pagename = null;
 	};

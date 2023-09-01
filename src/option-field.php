@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-06-23
+ * @version 2023-08-31
  */
 
 namespace wpinc\plex\option_field;
@@ -15,8 +15,8 @@ require_once __DIR__ . '/slug-key.php';
 /**
  * Adds an array of slug to label.
  *
- * @param array       $slug_to_label An array of slug to label.
- * @param string|null $format        A format to assign.
+ * @param array<string, string> $slug_to_label An array of slug to label.
+ * @param string|null           $format        A format to assign.
  */
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
@@ -30,7 +30,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 /**
  * Activates the option fields.
  *
- * @param array $args {
+ * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
  *
  *     @type array 'vars' Query variable names.
@@ -50,7 +50,7 @@ function activate( array $args = array() ): void {
 	$inst->vars = $args['vars'];
 
 	if ( is_admin() ) {
-		add_filter( 'admin_head', '\wpinc\plex\option_field\_cb_admin_head' );
+		add_action( 'admin_head', '\wpinc\plex\option_field\_cb_admin_head' );
 		add_action( 'admin_init', '\wpinc\plex\option_field\_cb_admin_init' );
 	} else {
 		add_filter( 'option_date_format', '\wpinc\plex\option_field\_cb_option_date_format' );
@@ -194,7 +194,7 @@ function _get_instance(): object {
 		/**
 		 * The array of slug to label.
 		 *
-		 * @var array
+		 * @var array<string, string>
 		 */
 		public $slug_to_label = array();
 
@@ -208,7 +208,7 @@ function _get_instance(): object {
 		/**
 		 * The array of variable names.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $vars = array();
 	};

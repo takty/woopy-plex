@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-06-23
+ * @version 2023-08-31
  */
 
 namespace wpinc\plex\post_field;
@@ -27,8 +27,8 @@ function add_post_type( $post_type_s ): void {
 /**
  * Adds an array of slug to label.
  *
- * @param array       $slug_to_label An array of slug to label.
- * @param string|null $format        A format to assign.
+ * @param array<string, string> $slug_to_label An array of slug to label.
+ * @param string|null           $format        A format to assign.
  */
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
@@ -42,7 +42,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 /**
  * Activates the post content.
  *
- * @param array $args {
+ * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
  *
  *     @type array  'vars'               Query variable names.
@@ -104,18 +104,18 @@ function activate( array $args = array() ): void {
  * @return string Filtered title.
  */
 function get_the_title( ?\WP_Post $post, ?string $key = null ): string {
-	$inst = _get_instance();
-	$p    = get_post( $post );
-	if (
-		$p instanceof \WP_Post &&
-		in_array( $p->post_type, $inst->post_types, true )
-	) {
-		$t = _get_title( $p, $key );
-		if ( null !== $t ) {
-			return $t;
+	$p = get_post( $post );
+	if ( $p instanceof \WP_Post ) {
+		$inst = _get_instance();
+		if ( in_array( $p->post_type, $inst->post_types, true ) ) {
+			$t = _get_title( $p, $key );
+			if ( null !== $t ) {
+				return $t;
+			}
 		}
+		return \get_the_title( $p );
 	}
-	return \get_the_title( $post );
+	return '';
 }
 
 /**
@@ -199,7 +199,7 @@ function _get_title( \WP_Post $post, ?string $key = null ): ?string {
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		return null;
 	}
-	$id = isset( $post->ID ) ? $post->ID : 0;
+	$id = $post->ID;
 	$t  = get_post_meta( $id, $inst->key_pre_title . $key, true );
 	if ( empty( $t ) ) {
 		return null;
@@ -211,14 +211,14 @@ function _get_title( \WP_Post $post, ?string $key = null ): ?string {
 			$f = __( 'Protected: %s' );
 			$f = apply_filters( 'protected_title_format', $f, $post );
 			$t = sprintf( $f, $t );
-		} elseif ( isset( $post->post_status ) && 'private' === $post->post_status ) {
+		} elseif ( 'private' === $post->post_status ) {
 			/* translators: %s: Private post title. */
 			$f = __( 'Private: %s' );
 			$f = apply_filters( 'private_title_format', $f, $post );
 			$t = sprintf( $f, $t );
 		}
 	}
-	remove_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
+	remove_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10 );
 	$t = apply_filters( 'the_title', $t, $id );
 	add_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
 	return $t;
@@ -286,7 +286,7 @@ function _get_content( \WP_Post $post, ?string $key = null ): ?string {
 /**
  * Callback function for 'widgets_init' action.
  */
-function _cb_widgets_init() {
+function _cb_widgets_init(): void {
 	if (
 		! function_exists( '\wpinc\blok\field\add_block' ) ||
 		! function_exists( '\wpinc\blok\input\add_block' )
@@ -470,7 +470,7 @@ function _get_instance(): object {
 		/**
 		 * The array of slug to label.
 		 *
-		 * @var array
+		 * @var array<string, string>
 		 */
 		public $slug_to_label = array();
 
@@ -484,7 +484,7 @@ function _get_instance(): object {
 		/**
 		 * The array of variable names.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $vars = array();
 
@@ -498,7 +498,7 @@ function _get_instance(): object {
 		/**
 		 * The post types.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		public $post_types = array();
 
