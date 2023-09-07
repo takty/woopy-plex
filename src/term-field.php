@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-09-01
+ * @version 2023-09-07
  */
 
 namespace wpinc\plex\term_field;
@@ -44,6 +44,9 @@ function add_taxonomy( $taxonomy_s, array $args = array() ): void {
 	if ( $args['has_description'] ) {
 		$inst->txs_description = array_merge( $inst->txs_description, $txs );
 	}
+	if ( $inst->is_activated ) {
+		_add_hooks( $txs, $args['has_description'] ? $txs : array() );
+	}
 }
 
 /**
@@ -77,11 +80,11 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
  * }
  */
 function activate( array $args = array() ): void {
-	static $activated = 0;
-	if ( $activated++ ) {
+	$inst = _get_instance();
+	if ( $inst->is_activated ) {
 		return;
 	}
-	$inst = _get_instance();
+	$inst->is_activated = true;
 
 	$args += array(
 		'vars'                      => array(),
@@ -101,17 +104,32 @@ function activate( array $args = array() ): void {
 	if ( ! is_admin() || in_array( $pagenow, array( 'post-new.php', 'post.php', 'edit.php' ), true ) ) {
 		add_filter( 'get_object_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
 		add_filter( 'get_terms', '\wpinc\plex\term_field\_cb_get_terms', 10 );
-		foreach ( $inst->txs as $tx ) {
+	}
+	_add_hooks( $inst->txs, $inst->txs_description );
+}
+
+/**
+ * Adds filters and actions for each taxonomies.
+ *
+ * @access private
+ *
+ * @param string[] $txs      Taxonomy slugs.
+ * @param string[] $txs_desc Taxonomy slugs for custom descriptions.
+ */
+function _add_hooks( array $txs, array $txs_desc ): void {
+	global $pagenow;
+	if ( ! is_admin() || in_array( $pagenow, array( 'post-new.php', 'post.php', 'edit.php' ), true ) ) {
+		foreach ( $txs as $tx ) {
 			add_filter( "get_{$tx}", '\wpinc\plex\term_field\_cb_get_taxonomy', 10 );
 		}
 	}
 	if ( is_admin() ) {
-		foreach ( $inst->txs as $tx ) {
+		foreach ( $txs as $tx ) {
 			add_action( "{$tx}_edit_form_fields", '\wpinc\plex\term_field\_cb_taxonomy_edit_form_fields', 10, 2 );
 			add_action( "edited_$tx", '\wpinc\plex\term_field\_cb_edited_taxonomy', 10 );
 		}
 	} else {
-		foreach ( $inst->txs_description as $tx ) {
+		foreach ( $txs_desc as $tx ) {
 			add_filter( "{$tx}_description", '\wpinc\plex\term_field\_cb_taxonomy_description', 10, 3 );
 		}
 	}
@@ -532,6 +550,13 @@ function _get_instance(): object {
 		return $values;
 	}
 	$values = new class() {
+		/**
+		 * Whether the term field is activated.
+		 *
+		 * @var bool
+		 */
+		public $is_activated = false;
+
 		/**
 		 * The array of slug to label.
 		 *
