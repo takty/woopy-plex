@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-09-01
+ * @version 2023-09-19
  */
 
 namespace wpinc\plex\multi_term_filter;
@@ -58,9 +58,8 @@ function count_posts_with_terms( $post_type_s, array $term_taxonomies ): int {
 	if ( empty( $term_taxonomies ) ) {
 		return 0;
 	}
-	$inst = _get_instance();
-	$pts  = (array) $post_type_s;
-	$pts  = "('" . implode( "', '", esc_sql( $pts ) ) . "')";
+	$pts = (array) $post_type_s;
+	$pts = "('" . implode( "', '", esc_sql( $pts ) ) . "')";
 
 	global $wpdb;
 	$q  = "SELECT COUNT(*) FROM $wpdb->posts AS p";
