@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-08-31
+ * @version 2023-10-11
  */
 
 namespace wpinc\plex\filter;
@@ -13,21 +13,36 @@ require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/multi-term-filter.php';
 require_once __DIR__ . '/slug-key.php';
 
-/**
+/** phpcs:ignore
  * Registers taxonomy used for filter.
  *
- * @param string               $var  The query variable name related to the taxonomy.
- * @param array<string, mixed> $args {
- *     Configuration arguments.
+ * @param string $var_name The query variable name related to the taxonomy.
+ * phpcs:ignore
+ * @param array{
+ *     taxonomy?         : string,
+ *     do_insert_terms?  : bool,
+ *     slug_to_label?    : array,
+ *     label?            : string,
+ *     show_in_nav_menus?: bool,
+ *     show_admin_column?: bool,
+ *     show_in_rest?     : bool,
+ *     hierarchical?     : bool,
+ *     query_var?        : bool,
+ *     rewrite?          : bool,
+ * } $args (Optional) Configuration arguments.
  *
- *     @type string 'taxonomy'        The taxonomy used for filter. Default the same as $var.
+ * $args {
+ *     (Optional) Configuration arguments.
+ *
+ *     @type string 'taxonomy'        The taxonomy used for filter. Default the same as $var_name.
  *     @type bool   'do_insert_terms' Whether terms are inserted. Default true.
  *     @type array  'slug_to_label'   An array of slug to label.
  * }
  */
-function add_filter_taxonomy( string $var, array $args = array() ): void {
+// phpcs:ignore
+function add_filter_taxonomy( string $var_name, array $args = array() ): void {  // @phpstan-ignore-line
 	$args += array(
-		'taxonomy'          => $var,
+		'taxonomy'          => $var_name,
 		'do_insert_terms'   => true,
 		'slug_to_label'     => array(),
 
@@ -48,14 +63,14 @@ function add_filter_taxonomy( string $var, array $args = array() ): void {
 	register_taxonomy( $tx, '', $args );
 
 	if ( $do_insert_terms ) {
-		_insert_terms( $var, $tx, $slug_to_label );
+		_insert_terms( $var_name, $tx, $slug_to_label );
 	}
 	$inst = _get_instance();
 	foreach ( $inst->post_types as $pt ) {
 		register_taxonomy_for_object_type( $tx, $pt );
 	}
-	$inst->vars[]            = $var;
-	$inst->var_to_tx[ $var ] = $tx;
+	$inst->vars[]                 = $var_name;  // @phpstan-ignore-line
+	$inst->var_to_tx[ $var_name ] = $tx;  // @phpstan-ignore-line
 }
 
 /**
@@ -63,12 +78,12 @@ function add_filter_taxonomy( string $var, array $args = array() ): void {
  *
  * @access private
  *
- * @param string                $var           The query variable name related to the taxonomy.
+ * @param string                $var_name      The query variable name related to the taxonomy.
  * @param string                $tx            Taxonomy.
  * @param array<string, string> $slug_to_label Array of slugs to label.
  */
-function _insert_terms( string $var, string $tx, array $slug_to_label ): void {
-	$temp = \wpinc\plex\custom_rewrite\get_structures( 'slugs', array( $var ) );
+function _insert_terms( string $var_name, string $tx, array $slug_to_label ): void {
+	$temp = \wpinc\plex\custom_rewrite\get_structure_slugs( array( $var_name ) );
 	if ( empty( $temp ) ) {
 		return;
 	}
@@ -96,7 +111,7 @@ function add_filtered_post_type( $post_type_s ): void {
 			\wpinc\plex\multi_term_filter\add_function_to_retrieve_terms( 'wpinc\plex\filter\_get_query_terms', $pt );
 		}
 	}
-	$inst->post_types = array_merge( $inst->post_types, $pts );
+	$inst->post_types = array_merge( $inst->post_types, $pts );  // @phpstan-ignore-line
 }
 
 /**
@@ -108,7 +123,7 @@ function add_counted_taxonomy( $taxonomy_s ): void {
 	$txs  = is_array( $taxonomy_s ) ? $taxonomy_s : array( $taxonomy_s );
 	$inst = _get_instance();
 
-	$inst->txs_counted = array_merge( $inst->txs_counted, $txs );
+	$inst->txs_counted = array_merge( $inst->txs_counted, $txs );  // @phpstan-ignore-line
 }
 
 /**
@@ -131,7 +146,7 @@ function activate( array $args = array() ): void {
 		'count_key_prefix' => '_count_',
 	);
 
-	$inst->key_pre_count = $args['count_key_prefix'];
+	$inst->key_pre_count = $args['count_key_prefix'];  // @phpstan-ignore-line
 
 	if ( is_admin() ) {
 		add_action( 'edited_term_taxonomy', '\wpinc\plex\filter\_cb_edited_term_taxonomy', 10, 2 );
@@ -156,7 +171,7 @@ function activate( array $args = array() ): void {
 function _get_query_terms(): array {
 	$ret  = array();
 	$inst = _get_instance();
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
+	$vars = \wpinc\plex\custom_rewrite\get_structure_vars( $inst->vars );
 
 	foreach ( $vars as $var ) {
 		$tx = $inst->var_to_tx[ $var ];
@@ -182,10 +197,9 @@ function _cb_post_link_filter( array $query_vars, ?\WP_Post $post = null ): arra
 	if ( null === $post || ! in_array( $post->post_type, $inst->post_types, true ) ) {
 		return $query_vars;
 	}
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars );
+	$vars = \wpinc\plex\custom_rewrite\get_structure_vars( $inst->vars );
 
 	foreach ( $vars as $var ) {
-		$var   = (string) $var;
 		$terms = get_the_terms( $post->ID, $inst->var_to_tx[ $var ] );
 		if ( ! is_array( $terms ) ) {
 			continue;
@@ -212,10 +226,10 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 		return;
 	}
 	$txs = array_map(
-		function ( $var ) use ( $inst ) {
-			return $inst->var_to_tx[ $var ];
+		function ( string $var_name ) use ( $inst ) {
+			return $inst->var_to_tx[ $var_name ];
 		},
-		\wpinc\plex\custom_rewrite\get_structures( 'var', $inst->vars )
+		\wpinc\plex\custom_rewrite\get_structure_vars( $inst->vars )
 	);
 
 	$is_filtered = in_array( $taxonomy, $inst->txs_counted, true );
@@ -232,7 +246,7 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 				'hide_empty' => false,
 			)
 		);
-		if ( is_wp_error( $tars ) ) {
+		if ( ! is_array( $tars ) ) {
 			return;
 		}
 	}
@@ -268,7 +282,13 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
  *
  * @access private
  *
- * @return object Instance.
+ * @return object{
+ *     vars         : string[],
+ *     var_to_tx    : array<string, string>,
+ *     post_types   : string[],
+ *     txs_counted  : string[],
+ *     key_pre_count: string,
+ * } Instance.
  */
 function _get_instance(): object {
 	static $values = null;

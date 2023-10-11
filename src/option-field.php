@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-08-31
+ * @version 2023-10-11
  */
 
 namespace wpinc\plex\option_field;
@@ -21,14 +21,16 @@ require_once __DIR__ . '/slug-key.php';
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
-	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
+	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
 	if ( $format ) {
-		$inst->label_format = $format;
+		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
 
 /**
  * Activates the option fields.
+ *
+ * @psalm-suppress HookNotFound
  *
  * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
@@ -47,7 +49,7 @@ function activate( array $args = array() ): void {
 		'vars' => array(),
 	);
 
-	$inst->vars = $args['vars'];
+	$inst->vars = $args['vars'];  // @phpstan-ignore-line
 
 	if ( is_admin() ) {
 		add_action( 'admin_head', '\wpinc\plex\option_field\_cb_admin_head' );
@@ -73,7 +75,7 @@ function activate( array $args = array() ): void {
 function _cb_option_date_format( string $value ): string {
 	$inst = _get_instance();
 	$ret  = get_option( 'date_format_' . \wpinc\plex\get_query_key( $inst->vars ) );
-	if ( false === $ret ) {
+	if ( empty( $ret ) || ! is_string( $ret ) ) {
 		return $value;
 	}
 	return $ret;
@@ -90,7 +92,7 @@ function _cb_option_date_format( string $value ): string {
 function _cb_option_time_format( string $value ): string {
 	$inst = _get_instance();
 	$ret  = get_option( 'time_format_' . \wpinc\plex\get_query_key( $inst->vars ) );
-	if ( false === $ret ) {
+	if ( empty( $ret ) || ! is_string( $ret ) ) {
 		return $value;
 	}
 	return $ret;
@@ -167,11 +169,13 @@ function _cb_admin_init(): void {
  * @param string $key The key of the field.
  */
 function _cb_field_input( string $key ): void {
-	$_key = esc_attr( $key );
-	$_val = esc_attr( get_option( $key ) );
-	// phpcs:disable
-	echo "<input id=\"$_key\" name=\"$_key\" type=\"text\" value=\"$_val\" class=\"regular-text\">";
-	// phpcs:enable
+	$val = get_option( $key );
+	$val = is_string( $val ) ? $val : '';
+	printf(
+		'<input id="%1$s" name="%1$s" type="text" value="%2$s" class="regular-text">',
+		esc_attr( $key ),
+		esc_attr( $val )
+	);
 }
 
 
@@ -183,7 +187,11 @@ function _cb_field_input( string $key ): void {
  *
  * @access private
  *
- * @return object Instance.
+ * @return object{
+ *     slug_to_label: array<string, string>,
+ *     label_format : string,
+ *     vars         : string[],
+ * } Instance.
  */
 function _get_instance(): object {
 	static $values = null;

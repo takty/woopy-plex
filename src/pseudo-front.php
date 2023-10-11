@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-08-31
+ * @version 2023-10-11
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -24,14 +24,16 @@ const EDIT_PAGE_URL   = 'edit.php?post_type=page';
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
-	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
+	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
 	if ( $format ) {
-		$inst->label_format = $format;
+		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
 
 /**
  * Activates the pseudo-front.
+ *
+ * @psalm-suppress HookNotFound
  *
  * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
@@ -52,8 +54,8 @@ function activate( array $args = array() ): void {
 		'do_set_page_on_front_option' => true,
 	);
 
-	$inst->has_default_front_bloginfo  = $args['has_default_front_bloginfo'];
-	$inst->do_set_page_on_front_option = $args['do_set_page_on_front_option'];
+	$inst->has_default_front_bloginfo  = $args['has_default_front_bloginfo'];  // @phpstan-ignore-line
+	$inst->do_set_page_on_front_option = $args['do_set_page_on_front_option'];  // @phpstan-ignore-line
 
 	if ( ! $inst->has_default_front_bloginfo ) {
 		$key = \wpinc\plex\get_default_key();
@@ -65,7 +67,7 @@ function activate( array $args = array() ): void {
 		add_action( 'admin_init', '\wpinc\plex\pseudo_front\_cb_admin_init' );
 
 		add_filter( 'query_vars', '\wpinc\plex\pseudo_front\_cb_query_vars' );
-		add_action( 'admin_menu', '\wpinc\plex\pseudo_front\_cb_admin_menu' );
+		add_action( 'admin_menu', '\wpinc\plex\pseudo_front\_cb_admin_menu', 10, 0 );
 		add_filter( 'submenu_file', '\wpinc\plex\pseudo_front\_cb_submenu_file', 10, 2 );
 		add_action( 'parse_query', '\wpinc\plex\pseudo_front\_cb_parse_query' );
 
@@ -74,7 +76,7 @@ function activate( array $args = array() ): void {
 	} else {
 		add_filter( 'option_page_on_front', '\wpinc\plex\pseudo_front\_cb_option_page_on_front' );
 		add_filter( 'page_link', '\wpinc\plex\pseudo_front\_cb_page_link', 9, 2 );  // Add a hook before that of custom-rewrite.
-		add_filter( 'redirect_canonical', '\wpinc\plex\pseudo_front\_cb_redirect_canonical', 1, 2 );
+		add_filter( 'redirect_canonical', '\wpinc\plex\pseudo_front\_cb_redirect_canonical', 1, 1 );
 
 		add_filter( 'option_blogname', '\wpinc\plex\pseudo_front\_cb_option_blogname' );
 		add_filter( 'option_blogdescription', '\wpinc\plex\pseudo_front\_cb_option_blogdescription' );
@@ -89,11 +91,11 @@ function activate( array $args = array() ): void {
 /**
  * Retrieves the URL for the current site where the front end is accessible.
  *
- * @param string                $path   (Optional) Path relative to the home URL.
- *                                      Default ''.
- * @param string|null           $scheme (Optional) Scheme to give the home URL context.
- *                                      Accepts 'http', 'https', 'relative', 'rest', or null.
- * @param array<string, string> $vars   (Optional) An array of variable name to slug.
+ * @param string                                $path   (Optional) Path relative to the home URL.
+ *                                                      Default ''.
+ * @param 'http'|'https'|'relative'|'rest'|null $scheme (Optional) Scheme to give the home URL context.
+ *                                                      Accepts 'http', 'https', 'relative', 'rest', or null.
+ * @param array<string, string>                 $vars   (Optional) An array of variable name to slug.
  * @return string Home URL link with optional path appended.
  */
 function home_url( string $path = '', ?string $scheme = null, array $vars = array() ): string {
@@ -122,7 +124,7 @@ function _get_front_page_ids(): array {
 	$ids = array();
 	foreach ( \wpinc\plex\get_slug_key_to_combination() as $slugs ) {
 		$page = get_page_by_path( implode( '/', $slugs ) );
-		if ( $page ) {
+		if ( $page instanceof \WP_Post ) {
 			$ids[] = $page->ID;
 		}
 	}
@@ -137,7 +139,7 @@ function _get_front_page_ids(): array {
  * Callback function for 'option_{$option}' filter.
  *
  * @access private
- * @global \WP_Post $post
+ * @global \WP_Post|null $post
  *
  * @param mixed $value Value of the option.
  * @return mixed The filtered string.
@@ -147,9 +149,9 @@ function _cb_option_page_on_front( $value ) {
 
 	$fp = get_page_by_path( \wpinc\plex\custom_rewrite\build_full_path() );
 	global $post;
-	if ( $fp && $post && $fp->ID === $post->ID ) {
-		$inst->original_page_on_front = (int) $value;
-		$inst->suppress_redirect      = true;
+	if ( $post && $fp instanceof \WP_Post && $fp->ID === $post->ID ) {
+		$inst->original_page_on_front = (int) $value;  // @phpstan-ignore-line
+		$inst->suppress_redirect      = true;  // @phpstan-ignore-line
 
 		$value = $fp->ID;
 	}
@@ -192,7 +194,7 @@ function _get_raw_page_link( int $post_id ): ?string {
 	global $wp_rewrite;
 	$struct = $wp_rewrite->get_page_permastruct();
 	$p      = get_post( $post_id );
-	if ( ! $p ) {
+	if ( ! ( $p instanceof \WP_Post ) ) {
 		return null;
 	}
 	$path = get_page_uri( $p );
@@ -209,12 +211,11 @@ function _get_raw_page_link( int $post_id ): ?string {
  * @access private
  *
  * @param string $redirect_url  The redirect URL.
- * @param string $requested_url The requested URL.
- * @return mixed The filtered string.
+ * @return string The filtered string.
  */
-function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
+function _cb_redirect_canonical( string $redirect_url ) {
 	if ( _get_instance()->suppress_redirect ) {
-		return false;
+		return '';
 	}
 	return $redirect_url;
 }
@@ -229,7 +230,7 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
  */
 function _cb_option_blogname( string $value ): string {
 	$ret = get_option( 'blogname_' . \wpinc\plex\get_query_key() );
-	if ( false === $ret ) {
+	if ( empty( $ret ) || ! is_string( $ret ) ) {
 		return $value;
 	}
 	return $ret;
@@ -245,7 +246,7 @@ function _cb_option_blogname( string $value ): string {
  */
 function _cb_option_blogdescription( string $value ): string {
 	$ret = get_option( 'blogdescription_' . \wpinc\plex\get_query_key() );
-	if ( false === $ret ) {
+	if ( empty( $ret ) || ! is_string( $ret ) ) {
 		return $value;
 	}
 	return $ret;
@@ -261,7 +262,7 @@ function _cb_option_blogdescription( string $value ): string {
  */
 function _cb_body_class( array $classes ): array {
 	$cs   = array();
-	$vars = \wpinc\plex\custom_rewrite\get_structures( 'var' );
+	$vars = \wpinc\plex\custom_rewrite\get_structure_vars();
 	foreach ( $vars as $var ) {
 		$val = \wpinc\plex\custom_rewrite\get_query_var( $var );
 		if ( ! empty( $val ) ) {
@@ -327,7 +328,7 @@ function _cb_admin_init(): void {
 		$path = \wpinc\plex\custom_rewrite\build_full_path();
 		if ( ! empty( $path ) ) {
 			$fp = get_page_by_path( $path );
-			if ( $fp ) {
+			if ( $fp instanceof \WP_Post ) {
 				update_option( 'page_on_front', $fp->ID );
 			}
 		}
@@ -343,7 +344,12 @@ function _cb_admin_init(): void {
  */
 function _cb_field_input( string $key ): void {
 	$val = get_option( $key );
-	printf( '<input id="%1$s" name="%1$s" type="text" value="%2$s" class="regular-text">', esc_attr( $key ), esc_attr( $val ) );
+	$val = is_string( $val ) ? $val : '';
+	printf(
+		'<input id="%1$s" name="%1$s" type="text" value="%2$s" class="regular-text">',
+		esc_attr( $key ),
+		esc_attr( $val )
+	);
 }
 
 /**
@@ -367,9 +373,9 @@ function _cb_query_vars( array $public_query_vars ): array {
 function _cb_admin_menu(): void {
 	$inst = _get_instance();
 
-	foreach ( \wpinc\plex\get_slug_key_to_combination() as $key => $slugs ) {
+	foreach ( \wpinc\plex\get_slug_key_to_combination() as $_key => $slugs ) {
 		$page = get_page_by_path( implode( '/', $slugs ) );
-		if ( $page ) {
+		if ( $page instanceof \WP_Post ) {
 			$lab  = __( 'All Pages', 'default' ) . '<br>' . esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
 			$slug = add_query_arg( ADMIN_QUERY_VAR, $page->ID, EDIT_PAGE_URL );
 			add_pages_page( '', $lab, 'edit_pages', $slug );
@@ -381,17 +387,18 @@ function _cb_admin_menu(): void {
  * Callback function for 'submenu_file' filter.
  *
  * @access private
+ * @global \WP_Post|null $post
  *
- * @param string|null $submenu_file The submenu file.
- * @param string      $parent_file  The submenu item's parent file.
- * @return string|null The filtered file.
+ * @param string $submenu_file The submenu file.
+ * @param string $parent_file  The submenu item's parent file.
+ * @return string The filtered file.
  */
-function _cb_submenu_file( ?string $submenu_file, string $parent_file ): ?string {
+function _cb_submenu_file( string $submenu_file, string $parent_file ): string {
+	global $post;
 	if ( EDIT_PAGE_URL === $parent_file ) {
-		global $post;
 		if ( $post ) {
 			$as   = get_post_ancestors( $post );
-			$as[] = (int) $post->ID;
+			$as[] = $post->ID;
 			foreach ( _get_front_page_ids() as $pf_id ) {
 				if ( in_array( $pf_id, $as, true ) ) {
 					$submenu_file = add_query_arg( ADMIN_QUERY_VAR, $pf_id, EDIT_PAGE_URL );
@@ -429,7 +436,7 @@ function _cb_parse_query( \WP_Query $query ): void {
 		return;
 	}
 	$page_id = \get_query_var( ADMIN_QUERY_VAR );
-	if ( empty( $page_id ) ) {
+	if ( ! is_numeric( $page_id ) ) {
 		return;
 	}
 	$page_id = (int) $page_id;
@@ -468,7 +475,7 @@ function _cb_display_post_states( array $post_states, \WP_Post $post ): array {
 	unset( $post_states['page_on_front'] );
 
 	$ids = _get_front_page_ids();
-	if ( in_array( (int) $post->ID, $ids, true ) ) {
+	if ( in_array( $post->ID, $ids, true ) ) {
 		if ( $is_real_front ) {
 			$post_states['page_on_front'] = _x( 'Front Page', 'page label' );
 		} else {
@@ -538,7 +545,14 @@ function _cb_admin_bar_menu( \WP_Admin_Bar $wp_admin_bar ): void {
  *
  * @access private
  *
- * @return object Instance.
+ * @return object{
+ *     slug_to_label              : array<string, string>,
+ *     label_format               : string,
+ *     has_default_front_bloginfo : bool,
+ *     do_set_page_on_front_option: bool,
+ *     suppress_redirect          : bool,
+ *     original_page_on_front     : int,
+ * } Instance.
  */
 function _get_instance(): object {
 	static $values = null;

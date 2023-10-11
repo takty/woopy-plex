@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-09-07
+ * @version 2023-10-11
  */
 
 namespace wpinc\plex\term_field;
@@ -12,11 +12,18 @@ namespace wpinc\plex\term_field;
 require_once __DIR__ . '/custom-rewrite.php';
 require_once __DIR__ . '/slug-key.php';
 
-/**
+/** phpcs:ignore
  * Adds taxonomy.
  *
- * @param string|string[]      $taxonomy_s Taxonomy slugs.
- * @param array<string, mixed> $args {
+ * @param string|string[] $taxonomy_s Taxonomy slugs.
+ * phpcs:ignore
+ * @param array{
+ *     has_singular_name?        : bool,
+ *     has_default_singular_name?: bool,
+ *     has_description?          : bool,
+ * } $args (Optional) Configuration arguments.
+ *
+ * $args {
  *     (Optional) Configuration arguments.
  *
  *     @type bool 'has_singular_name'         Whether the terms has singular names.
@@ -34,15 +41,15 @@ function add_taxonomy( $taxonomy_s, array $args = array() ): void {
 		'has_description'           => false,
 	);
 
-	$inst->txs = array_merge( $inst->txs, $txs );
+	$inst->txs = array_merge( $inst->txs, $txs );  // @phpstan-ignore-line
 	if ( $args['has_singular_name'] ) {
-		$inst->txs_sg_name = array_merge( $inst->txs_sg_name, $txs );
+		$inst->txs_sg_name = array_merge( $inst->txs_sg_name, $txs );  // @phpstan-ignore-line
 	}
 	if ( $args['has_default_singular_name'] ) {
-		$inst->txs_default_sg_name = array_merge( $inst->txs_default_sg_name, $txs );
+		$inst->txs_default_sg_name = array_merge( $inst->txs_default_sg_name, $txs );  // @phpstan-ignore-line
 	}
 	if ( $args['has_description'] ) {
-		$inst->txs_description = array_merge( $inst->txs_description, $txs );
+		$inst->txs_description = array_merge( $inst->txs_description, $txs );  // @phpstan-ignore-line
 	}
 	if ( $inst->is_activated ) {
 		_add_hooks( $txs, $args['has_description'] ? $txs : array() );
@@ -58,9 +65,9 @@ function add_taxonomy( $taxonomy_s, array $args = array() ): void {
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
-	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
+	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
 	if ( $format ) {
-		$inst->label_format = $format;
+		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
 
@@ -84,7 +91,7 @@ function activate( array $args = array() ): void {
 	if ( $inst->is_activated ) {
 		return;
 	}
-	$inst->is_activated = true;
+	$inst->is_activated = true;  // @phpstan-ignore-line
 
 	$args += array(
 		'vars'                      => array(),
@@ -94,11 +101,11 @@ function activate( array $args = array() ): void {
 		'default_singular_name_key' => '_singular_name',
 	);
 
-	$inst->vars                = $args['vars'];
-	$inst->key_pre_name        = $args['name_key_prefix'];
-	$inst->key_pre_sg_name     = $args['singular_name_key_prefix'];
-	$inst->key_pre_description = $args['description_key_prefix'];
-	$inst->key_default_sg_name = $args['default_singular_name_key'];
+	$inst->vars                = $args['vars'];  // @phpstan-ignore-line
+	$inst->key_pre_name        = $args['name_key_prefix'];  // @phpstan-ignore-line
+	$inst->key_pre_sg_name     = $args['singular_name_key_prefix'];  // @phpstan-ignore-line
+	$inst->key_pre_description = $args['description_key_prefix'];  // @phpstan-ignore-line
+	$inst->key_default_sg_name = $args['default_singular_name_key'];  // @phpstan-ignore-line
 
 	global $pagenow;
 	if ( ! is_admin() || in_array( $pagenow, array( 'post-new.php', 'post.php', 'edit.php' ), true ) ) {
@@ -138,12 +145,12 @@ function _add_hooks( array $txs, array $txs_desc ): void {
 /**
  * Retrieves term name.
  *
- * @param int   $term_id  (Optional) Term ID.
- * @param bool  $singular (Optional) Whether the name is singular.
- * @param mixed $args     (Optional) An array of variable name to slugs.
+ * @param int                               $term_id  (Optional) Term ID.
+ * @param bool                              $singular (Optional) Whether the name is singular.
+ * @param array<string, string>|string|null $args     (Optional) An array of variable name to slugs.
  * @return string Term name.
  */
-function get_term_name( int $term_id = 0, bool $singular = false, $args = null ) {
+function get_term_name( int $term_id = 0, bool $singular = false, $args = null ): string {
 	list( $term_id, $tx ) = _get_term_id_taxonomy( $term_id );
 
 	$inst = _get_instance();
@@ -169,24 +176,24 @@ function get_term_name( int $term_id = 0, bool $singular = false, $args = null )
 			}
 		}
 	}
-	return empty( $ret ) ? _get_term_field( 'name', $term_id ) : $ret;
+	return empty( $ret ) ? _get_term_field( 'name', $term_id ) : $ret;  // @phpstan-ignore-line
 }
 
 /**
  * Retrieves term description.
  *
- * @param int   $term_id (Optional) Term ID. Defaults to the current term ID.
- * @param mixed $args    (Optional) An array of variable name to slugs.
+ * @param int                               $term_id (Optional) Term ID. Defaults to the current term ID.
+ * @param array<string, string>|string|null $args    (Optional) An array of variable name to slugs.
  * @return string Term description, if available.
  */
-function term_description( int $term_id = 0, $args = null ) {
+function term_description( int $term_id = 0, $args = null ): string {
 	list( $term_id, $tx ) = _get_term_id_taxonomy( $term_id );
 
 	$inst = _get_instance();
 	$key  = \wpinc\plex\get_argument_key( $args, $inst->vars );
 	$ret  = '';
 
-	if ( $term_id && is_int( $term_id ) && in_array( $tx, $inst->txs, true ) ) {
+	if ( $term_id && in_array( $tx, $inst->txs, true ) ) {
 		if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
 			$ret = get_term_meta( $term_id, $inst->key_pre_description . $key, true );
 		}
@@ -194,7 +201,7 @@ function term_description( int $term_id = 0, $args = null ) {
 			$ret = _get_term_field( 'description', $term_id );
 		}
 	}
-	return $ret;
+	return $ret;  // @phpstan-ignore-line
 }
 
 
@@ -228,16 +235,21 @@ function _get_term_id_taxonomy( int $term_id = 0 ): array {
  *
  * @access private
  *
- * @param array<\WP_Term> $terms Array of found terms.
- * @return \WP_Term[] The filtered terms.
+ * @param array<\WP_Term|int|string>|string $terms Array of found terms.
+ * @return array<\WP_Term|int|string>|string The filtered terms.
  */
-function _cb_get_terms( array $terms ): array {
+function _cb_get_terms( $terms ) {
+	if ( ! is_array( $terms ) ) {
+		return $terms;
+	}
 	$inst = _get_instance();
 	$key  = \wpinc\plex\get_query_key( $inst->vars );
 
 	$ts = array();
 	foreach ( $terms as $t ) {
-		$ts[] = get_term( $t );
+		if ( ! is_string( $t ) ) {
+			$ts[] = get_term( $t );
+		}
 	}
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
@@ -246,7 +258,7 @@ function _cb_get_terms( array $terms ): array {
 				( $t instanceof \WP_Term ) &&
 				in_array( $t->taxonomy, $inst->txs_default_sg_name, true )
 			) {
-				_add_singular_name( $t, $t->taxonomy );
+				_add_singular_name( $t );
 			}
 		}
 	} else {
@@ -276,7 +288,7 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
 
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		if ( in_array( $t->taxonomy, $inst->txs_default_sg_name, true ) ) {
-			_add_singular_name( $t, $t->taxonomy );
+			_add_singular_name( $t );
 		}
 	} else {
 		_replace_name( $t, $t->taxonomy, $key );
@@ -288,6 +300,7 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
  * Replaces the name field of terms.
  *
  * @access private
+ * @psalm-suppress UndefinedPropertyAssignment
  *
  * @param \WP_Term $t        Term object.
  * @param string   $taxonomy The taxonomy slug.
@@ -303,12 +316,12 @@ function _replace_name( \WP_Term $t, string $taxonomy, string $key ): void {
 	if ( in_array( $taxonomy, $inst->txs_sg_name, true ) ) {
 		$sn = get_term_meta( $t->term_id, $inst->key_pre_sg_name . $key, true );
 
-		$t->singular_name = empty( $sn ) ? $t->name : $sn;
+		$t->singular_name = empty( $sn ) ? $t->name : $sn;  // @phpstan-ignore-line
 	}
 	$ret = empty( $name ) ? $sn : $name;
 	if ( ! empty( $ret ) ) {
-		$t->orig_name = $t->name;
-		$t->name      = $ret;
+		$t->orig_name = $t->name;  // @phpstan-ignore-line
+		$t->name      = $ret;  // @phpstan-ignore-line
 	}
 }
 
@@ -316,16 +329,16 @@ function _replace_name( \WP_Term $t, string $taxonomy, string $key ): void {
  * Adds singular name of default key.
  *
  * @access private
+ * @psalm-suppress UndefinedPropertyAssignment
  *
- * @param \WP_Term $t        Term object.
- * @param string   $taxonomy The taxonomy slug.
+ * @param \WP_Term $t Term object.
  */
-function _add_singular_name( \WP_Term $t, string $taxonomy ): void {
+function _add_singular_name( \WP_Term $t ): void {
 	$inst = _get_instance();
 	if ( ! isset( $t->singular_name ) ) {
 		$sn = get_term_meta( $t->term_id, $inst->key_default_sg_name, true );
 
-		$t->singular_name = empty( $sn ) ? $t->name : $sn;
+		$t->singular_name = empty( $sn ) ? $t->name : $sn;  // @phpstan-ignore-line
 	}
 }
 
@@ -393,7 +406,7 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ): void {
 	$inst   = _get_instance();
 	$t_meta = get_term_meta( $t->term_id );
 
-	$def_slugs  = \wpinc\plex\custom_rewrite\get_structures( 'default_slug', $inst->vars );
+	$def_slugs  = \wpinc\plex\custom_rewrite\get_structure_default_slugs( $inst->vars );
 	$lab_base_n = esc_html_x( 'Name', 'term name', 'default' );
 
 	$has_sn     = in_array( $taxonomy, $inst->txs_sg_name, true );
@@ -405,7 +418,7 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ): void {
 		$lab_n  = "$lab_base_n $lab_pf";
 
 		$id_name_sn = $inst->key_default_sg_name;
-		$val_sn     = isset( $t_meta[ $id_name_sn ] ) ? $t_meta[ $id_name_sn ][0] : '';
+		$val_sn     = ( is_array( $t_meta ) && isset( $t_meta[ $id_name_sn ] ) && is_string( $t_meta[ $id_name_sn ] ) ) ? $t_meta[ $id_name_sn ][0] : '';
 		_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'wpinc_plex' ), $id_name_sn, $id_name_sn, $val_sn );
 	}
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
@@ -415,20 +428,20 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ): void {
 
 		$id_n   = $inst->key_pre_name . $key;
 		$name_n = $inst->key_pre_name . "array[$key]";
-		$val_n  = isset( $t_meta[ $id_n ] ) ? $t_meta[ $id_n ][0] : '';
+		$val_n  = ( is_array( $t_meta ) && isset( $t_meta[ $id_n ] ) && is_string( $t_meta[ $id_n ] ) ) ? $t_meta[ $id_n ][0] : '';
 		_echo_name_field( $lab_n, $id_n, $name_n, $val_n, 'padding-bottom: 6px;' );
 
 		if ( $has_sn ) {
 			$id_sn   = $inst->key_pre_sg_name . $key;
 			$name_sn = $inst->key_pre_sg_name . "array[$key]";
-			$val_sn  = isset( $t_meta[ $id_sn ] ) ? $t_meta[ $id_sn ][0] : '';
+			$val_sn  = ( is_array( $t_meta ) && isset( $t_meta[ $id_sn ] ) && is_string( $t_meta[ $id_sn ] ) ) ? $t_meta[ $id_sn ][0] : '';
 			_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'wpinc_plex' ), $id_sn, $name_sn, $val_sn, 'padding-top: 6px;' );
 		}
 		if ( $has_desc ) {
 			$lab_d  = __( 'Description' ) . " $lab_pf";
 			$id_d   = $inst->key_pre_description . $key;
 			$name_d = $inst->key_pre_description . "array[$key]";
-			$val_d  = isset( $t_meta[ $id_d ] ) ? $t_meta[ $id_d ][0] : '';
+			$val_d  = ( is_array( $t_meta ) && isset( $t_meta[ $id_d ] ) && is_string( $t_meta[ $id_d ] ) ) ? $t_meta[ $id_d ][0] : '';
 			_echo_description_field( $lab_d, $id_d, $name_d, $val_d );
 		}
 	}
@@ -495,17 +508,17 @@ function _cb_edited_taxonomy( int $term_id ): void {
 	$key_desc = $inst->key_pre_description . 'array';
 
 	// phpcs:disable
-	if ( isset( $_POST[ $key_name ] ) ) {
+	if ( isset( $_POST[ $key_name ] ) && is_array( $_POST[ $key_name ] ) ) {
 		foreach ( $_POST[ $key_name ] as $key => $val ) {
 			_modify_term_meta( $term_id, $inst->key_pre_name . $key, $val );
 		}
 	}
-	if ( isset( $_POST[ $key_sn ] ) ) {
+	if ( isset( $_POST[ $key_sn ] ) && is_array( $_POST[ $key_sn ] ) ) {
 		foreach ( $_POST[ $key_sn ] as $key => $val ) {
 			_modify_term_meta( $term_id, $inst->key_pre_sg_name . $key, $val );
 		}
 	}
-	if ( isset( $_POST[ $key_desc ] ) ) {
+	if ( isset( $_POST[ $key_desc ] ) && is_array( $_POST[ $key_desc ] ) ) {
 		foreach ( $_POST[ $key_desc ] as $key => $val ) {
 			_modify_term_meta( $term_id, $inst->key_pre_description . $key, $val );
 		}
@@ -542,7 +555,20 @@ function _modify_term_meta( int $term_id, string $key, $val ): void {
  *
  * @access private
  *
- * @return object Instance.
+ * @return object{
+ *     is_activated       : bool,
+ *     slug_to_label      : array<string, string>,
+ *     label_format       : string,
+ *     vars               : string[],
+ *     key_pre_name       : string,
+ *     key_pre_sg_name    : string,
+ *     key_pre_description: string,
+ *     key_default_sg_name: string,
+ *     txs                : string[],
+ *     txs_sg_name        : string[],
+ *     txs_default_sg_name: string[],
+ *     txs_description    : string[],
+ * } Instance.
  */
 function _get_instance(): object {
 	static $values = null;

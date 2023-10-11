@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-08-31
+ * @version 2023-10-11
  */
 
 namespace wpinc\plex\post_field;
@@ -21,7 +21,7 @@ function add_post_type( $post_type_s ): void {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 	$inst = _get_instance();
 
-	$inst->post_types = array_merge( $inst->post_types, $pts );
+	$inst->post_types = array_merge( $inst->post_types, $pts );  // @phpstan-ignore-line
 }
 
 /**
@@ -33,9 +33,9 @@ function add_post_type( $post_type_s ): void {
 function add_admin_labels( array $slug_to_label, ?string $format = null ): void {
 	$inst = _get_instance();
 
-	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );
+	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
 	if ( $format ) {
-		$inst->label_format = $format;
+		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
 
@@ -65,10 +65,10 @@ function activate( array $args = array() ): void {
 		'content_key_prefix' => '_post_field_',
 	);
 
-	$inst->vars            = $args['vars'];
-	$inst->editor_type     = $args['editor_type'];
-	$inst->key_pre_title   = $args['title_key_prefix'];
-	$inst->key_pre_content = $args['content_key_prefix'];
+	$inst->vars            = $args['vars'];  // @phpstan-ignore-line
+	$inst->editor_type     = $args['editor_type'];  // @phpstan-ignore-line
+	$inst->key_pre_title   = $args['title_key_prefix'];  // @phpstan-ignore-line
+	$inst->key_pre_content = $args['content_key_prefix'];  // @phpstan-ignore-line
 
 	if ( 'block' === $inst->editor_type ) {
 		if ( did_action( 'widgets_init' ) ) {
@@ -80,9 +80,9 @@ function activate( array $args = array() ): void {
 	if ( is_admin() ) {
 		if ( 'classic' === $inst->editor_type ) {
 			add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
-			add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes' );
+			add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes', 10, 0 );
 			foreach ( $inst->post_types as $pt ) {
-				add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10, 2 );
+				add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10 );
 			}
 		}
 	} else {
@@ -199,29 +199,29 @@ function _get_title( \WP_Post $post, ?string $key = null ): ?string {
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		return null;
 	}
-	$id = $post->ID;
-	$t  = get_post_meta( $id, $inst->key_pre_title . $key, true );
-	if ( empty( $t ) ) {
+	$id  = $post->ID;
+	$ret = get_post_meta( $id, $inst->key_pre_title . $key, true );
+	if ( empty( $ret ) || ! is_string( $ret ) ) {
 		return null;
 	}
 
 	if ( ! is_admin() ) {
 		if ( ! empty( $post->post_password ) ) {
 			/* translators: %s: Protected post title. */
-			$f = __( 'Protected: %s' );
-			$f = apply_filters( 'protected_title_format', $f, $post );
-			$t = sprintf( $f, $t );
+			$f   = __( 'Protected: %s' );
+			$f   = apply_filters( 'protected_title_format', $f, $post );
+			$ret = sprintf( $f, $ret );
 		} elseif ( 'private' === $post->post_status ) {
 			/* translators: %s: Private post title. */
-			$f = __( 'Private: %s' );
-			$f = apply_filters( 'private_title_format', $f, $post );
-			$t = sprintf( $f, $t );
+			$f   = __( 'Private: %s' );
+			$f   = apply_filters( 'private_title_format', $f, $post );
+			$ret = sprintf( $f, $ret );
 		}
 	}
 	remove_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10 );
-	$t = apply_filters( 'the_title', $t, $id );
+	$ret = apply_filters( 'the_title', $ret, $id );
 	add_filter( 'the_title', '\wpinc\plex\post_field\_cb_the_title', 10, 2 );
-	return $t;
+	return $ret;
 }
 
 
@@ -272,11 +272,11 @@ function _get_content( \WP_Post $post, ?string $key = null ): ?string {
 	if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 		return null;
 	}
-	$c = get_post_meta( $post->ID, $inst->key_pre_content . $key, true );
-	if ( empty( $c ) ) {
+	$ret = get_post_meta( $post->ID, $inst->key_pre_content . $key, true );
+	if ( empty( $ret ) || ! is_string( $ret ) ) {
 		return null;
 	}
-	return $c;
+	return $ret;
 }
 
 
@@ -285,6 +285,9 @@ function _get_content( \WP_Post $post, ?string $key = null ): ?string {
 
 /**
  * Callback function for 'widgets_init' action.
+ *
+ * @access private
+ * @psalm-suppress UnusedForeachValue, UnusedVariable
  */
 function _cb_widgets_init(): void {
 	if (
@@ -299,21 +302,18 @@ function _cb_widgets_init(): void {
 	foreach ( $inst->post_types as $pt ) {
 		foreach ( $skc as $key => $slugs ) {
 			$lab_pf = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
-
-			\wpinc\blok\input\add_block(
-				array(
-					'key'       => $inst->key_pre_title . $key,
-					'label'     => _x( 'Title', 'post field', 'wpinc_plex' ) . " $lab_pf",
-					'post_type' => $pt,
-				)
+			$as_t   = array(
+				'key'       => $inst->key_pre_title . $key,
+				'label'     => _x( 'Title', 'post field', 'wpinc_plex' ) . " $lab_pf",
+				'post_type' => $pt,
 			);
-			\wpinc\blok\field\add_block(
-				array(
-					'key'       => $inst->key_pre_content . $key,
-					'label'     => _x( 'Content', 'post field', 'wpinc_plex' ) . " $lab_pf",
-					'post_type' => $pt,
-				)
+			$as_c   = array(
+				'key'       => $inst->key_pre_content . $key,
+				'label'     => _x( 'Content', 'post field', 'wpinc_plex' ) . " $lab_pf",
+				'post_type' => $pt,
 			);
+			\wpinc\blok\input\add_block( $as_t );  // @phpstan-ignore-line
+			\wpinc\blok\field\add_block( $as_c );  // @phpstan-ignore-line
 		}
 	}
 }
@@ -326,11 +326,11 @@ function _cb_widgets_init(): void {
  * Callback function for 'save_post_{$post_type}' action.
  *
  * @access private
+ * @psalm-suppress RedundantCondition
  *
- * @param int      $post_id Post ID.
- * @param \WP_Post $post    Post object.
+ * @param int $post_id Post ID.
  */
-function _cb_save_post( int $post_id, \WP_Post $post ): void {
+function _cb_save_post( int $post_id ): void {
 	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 		return;
 	}
@@ -340,21 +340,24 @@ function _cb_save_post( int $post_id, \WP_Post $post ): void {
 	$inst = _get_instance();
 	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 
-	foreach ( $skc as $key => $slugs ) {
-		if ( ! isset( $_POST[ "post_{$key}_nonce" ] ) ) {
+	foreach ( $skc as $key => $_slugs ) {
+		$nonce = $_POST[ "post_{$key}_nonce" ] ?? '';  // phpcs:ignore
+		if ( ! is_string( $nonce ) ) {
 			continue;
 		}
-		if ( ! wp_verify_nonce( sanitize_key( $_POST[ "post_{$key}_nonce" ] ), "post_$key" ) ) {
+		if ( ! wp_verify_nonce( sanitize_key( $nonce ), "post_$key" ) ) {
 			continue;
 		}
+		$key_t = $inst->key_pre_title . $key;
+		$key_c = $inst->key_pre_content . $key;
 		// phpcs:disable
-		$title   = $_POST[ $inst->key_pre_title . $key ];
-		$content = $_POST[ $inst->key_pre_content . $key ];
+		$title   = $_POST[ $key_t ] ?? '';
+		$content = $_POST[ $key_c ] ?? '';
 		// phpcs:enable
 		$title   = apply_filters( 'title_save_pre', $title );
 		$content = apply_filters( 'content_save_pre', $content );
-		update_post_meta( $post_id, $inst->key_pre_title . $key, $title );
-		update_post_meta( $post_id, $inst->key_pre_content . $key, $content );
+		update_post_meta( $post_id, $key_t, $title );
+		update_post_meta( $post_id, $key_c, $content );
 	}
 }
 
@@ -428,6 +431,12 @@ function _echo_title_content_field( string $key ): void {
 
 	$title   = get_post_meta( $post->ID, $name_t, true );
 	$content = get_post_meta( $post->ID, $name_c, true );
+	if ( ! is_string( $title ) ) {
+		$title = '';
+	}
+	if ( ! is_string( $content ) ) {
+		$content = '';
+	}
 
 	$placeholder = apply_filters( 'enter_title_here', __( 'Add title' ), $post );
 	wp_nonce_field( "post_$key", "post_{$key}_nonce" );
@@ -459,7 +468,15 @@ function _echo_title_content_field( string $key ): void {
  *
  * @access private
  *
- * @return object Instance.
+ * @return object{
+ *     slug_to_label  : array<string, string>,
+ *     label_format   : string,
+ *     vars           : string[],
+ *     editor_type    : string,
+ *     post_types     : string[],
+ *     key_pre_title  : string,
+ *     key_pre_content: string,
+ * } Instance.
  */
 function _get_instance(): object {
 	static $values = null;

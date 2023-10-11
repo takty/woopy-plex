@@ -4,15 +4,24 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-09-01
+ * @version 2023-10-11
  */
 
 namespace wpinc\plex\custom_rewrite;
 
-/**
+/** phpcs:ignore
  * Adds a rewrite structure.
  *
- * @param array<string, mixed> $args {
+ * phpcs:ignore
+ * @param array{
+ *     var          : string,
+ *     slugs        : string[],
+ *     default_slug?: string,
+ *     omittable?   : bool,
+ *     global?      : bool,
+ * } $args Rewrite structure arguments.
+ *
+ * $args {
  *     Rewrite structure arguments.
  *
  *     @type string   'var'          Name of the variable.
@@ -24,8 +33,6 @@ namespace wpinc\plex\custom_rewrite;
  */
 function add_structure( array $args ): void {
 	$args += array(
-		'var'          => '',
-		'slugs'        => array(),
 		'default_slug' => '',
 		'omittable'    => false,
 		'global'       => false,
@@ -33,7 +40,7 @@ function add_structure( array $args ): void {
 	if ( empty( $args['var'] ) ) {
 		wp_die( '$args[\'var\'] must be assigned.' );
 	}
-	if ( ! is_array( $args['slugs'] ) || empty( $args['slugs'] ) ) {
+	if ( empty( $args['slugs'] ) ) {
 		wp_die( '$args[\'slugs\'] must be a non-empty array.' );
 	}
 	if ( $args['omittable'] ) {
@@ -44,7 +51,7 @@ function add_structure( array $args ): void {
 			$args['default_slug'] = $args['slugs'][0];
 		}
 	}
-	_get_instance()->structures[] = $args;
+	_get_instance()->structures[] = $args;  // @phpstan-ignore-line
 }
 
 /**
@@ -53,7 +60,7 @@ function add_structure( array $args ): void {
  * @param callable $callback Callable for post link filter.
  */
 function add_post_link_filter( callable $callback ): void {
-	_get_instance()->post_link_filters[] = $callback;
+	_get_instance()->post_link_filters[] = $callback;  // @phpstan-ignore-line
 }
 
 /**
@@ -88,22 +95,22 @@ function activate(): void {
 /**
  * Sets the value of a query variable in the custom rewrite.
  *
- * @param string $var   Query variable key.
- * @param string $value Query variable value.
+ * @param string $var_name Query variable name.
+ * @param string $value    Query variable value.
  */
-function set_query_var( string $var, string $value ): string {
-	return _get_instance()->vars[ $var ] = $value;
+function set_query_var( string $var_name, string $value ): string {
+	return _get_instance()->vars[ $var_name ] = $value;  // @phpstan-ignore-line
 }
 
 /**
  * Retrieves the value of a query variable in the custom rewrite.
  *
- * @param string $var     The variable key to retrieve.
- * @param string $default (Optional) Value to return if the query variable is not set. Default empty.
+ * @param string $var_name    The variable name to retrieve.
+ * @param string $default_val (Optional) Value to return if the query variable is not set. Default empty.
  * @return string Slugs of the query variable.
  */
-function get_query_var( string $var, string $default = '' ): string {
-	return _get_instance()->vars[ $var ] ?? $default;
+function get_query_var( string $var_name, string $default_val = '' ): string {
+	return _get_instance()->vars[ $var_name ] ?? $default_val;
 }
 
 /**
@@ -111,7 +118,7 @@ function get_query_var( string $var, string $default = '' ): string {
  *
  * @param string|null   $field (Optional) Field of rewrite structure args.
  * @param string[]|null $vars  (Optional) Variable names for filtering.
- * @return mixed|array<string, mixed> Rewrite structures.
+ * @return string[]|array<string[]>|bool[]|array{ var: string, slugs: string[], default_slug: string, omittable: bool, global: bool }[] Rewrite structures.
  */
 function get_structures( ?string $field = null, ?array $vars = null ) {
 	$structs = _get_instance()->structures;
@@ -131,6 +138,42 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
 }
 
 /**
+ * Retrieves slugs of the rewrite structures.
+ *
+ * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+ *
+ * @param string[]|null $vars  (Optional) Variable names for filtering.
+ * @return list<string[]> Slugs.
+ */
+function get_structure_slugs( ?array $vars = null ): array {
+	return get_structures( 'slugs', $vars );  // @phpstan-ignore-line
+}
+
+/**
+ * Retrieves vars of the rewrite structures.
+ *
+ * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+ *
+ * @param string[]|null $vars  (Optional) Variable names for filtering.
+ * @return string[] Vars.
+ */
+function get_structure_vars( ?array $vars = null ): array {
+	return get_structures( 'var', $vars );  // @phpstan-ignore-line
+}
+
+/**
+ * Retrieves default slugs of the rewrite structures.
+ *
+ * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+ *
+ * @param string[]|null $vars  (Optional) Variable names for filtering.
+ * @return string[] Default slugs.
+ */
+function get_structure_default_slugs( ?array $vars = null ): array {
+	return get_structures( 'default_slug', $vars );  // @phpstan-ignore-line
+}
+
+/**
  * Retrieves invalid pagename.
  *
  * @return array<string|null>|null Invalid pagename.
@@ -142,7 +185,7 @@ function get_invalid_pagename(): ?array {
 /**
  * Builds a full path.
  *
- * @param string[] $vars (Optional) An array of variable name to slug.
+ * @param array<string, string> $vars (Optional) An array of variable name to slug.
  * @return string The full path.
  */
 function build_full_path( array $vars = array() ): string {
@@ -167,7 +210,7 @@ function build_full_path( array $vars = array() ): string {
 /**
  * Builds a normalized path.
  *
- * @param string[] $vars (Optional) An array of variable name to slug.
+ * @param array<string, string> $vars (Optional) An array of variable name to slug.
  * @return string The normalized path.
  */
 function build_norm_path( array $vars = array() ): string {
@@ -234,7 +277,7 @@ function _replace_path( string $url, string $before, string $after ): string {
  * @access private
  *
  * @param string $url URL.
- * @return array{array<string, mixed>, string} An array of variable name to slug.
+ * @return array{array<string, string>, string} An array of variable name to slug.
  */
 function _extract_vars( string $url ): array {
 	list( $path ) = explode( '?', $url );
@@ -245,14 +288,14 @@ function _extract_vars( string $url ): array {
 	$p    = array_shift( $ps );
 
 	foreach ( _get_instance()->structures as $st ) {
-		$var = (string) $st['var'];
+		$var = $st['var'];
 		if ( in_array( $p, $st['slugs'], true ) ) {
 			$vars[ $var ] = $p;
 			$sps[]        = $p;
 
 			$p = array_shift( $ps );
 		} else {
-			$vars[ $var ] = $st['omittable'] ? $st['default_slug'] : null;
+			$vars[ $var ] = $st['omittable'] ? $st['default_slug'] : '';
 		}
 	}
 	return array( $vars, implode( '/', $sps ) );
@@ -297,7 +340,7 @@ function _cb_after_setup_theme(): void {
 		return;
 	}
 	list( $req, $req_file )   = _parse_request();
-	list( $inst->vars, $cur ) = _extract_vars( $req );
+	list( $inst->vars, $cur ) = _extract_vars( $req );  // @phpstan-ignore-line
 	_register_globals();
 	if ( empty( $req ) ) {
 		return;
@@ -309,7 +352,7 @@ function _cb_after_setup_theme(): void {
 	$added  = trim( empty( $cur ) ? "/$full/$req/" : _str_replace_one( "/$cur/", "/$full/", "/$req/" ), '/' );
 	$ideal  = trim( empty( $cur ) ? "/$norm/$req/" : _str_replace_one( "/$cur/", "/$norm/", "/$req/" ), '/' );
 
-	list( $is_page_req, $pn_erased ) = _is_page_request( $erased, $req_file );
+	list( $is_page_req, ) = _is_page_request( $erased, $req_file );
 
 	if ( $is_page_req ) {
 		list( , $pn_added ) = _is_page_request( $added, $req_file );
@@ -319,14 +362,14 @@ function _cb_after_setup_theme(): void {
 			}
 			_replace_request( $req, $added );
 		} else {
-			$inst->is_page_not_found = true;
+			$inst->is_page_not_found = true;  // @phpstan-ignore-line
 
 			if ( is_user_logged_in() ) {
-				list(, $pn_orig ) = _is_page_request( $req, $req_file );
+				list( , $pn_orig ) = _is_page_request( $req, $req_file );
 				if ( $pn_orig ) {
 					$post_orig = get_page_by_path( $pn_orig );
 					if ( $post_orig ) {
-						$inst->invalid_pagename = array( $pn_orig, $pn_added );
+						$inst->invalid_pagename = array( $pn_orig, $pn_added );  // @phpstan-ignore-line
 					}
 				}
 			}
@@ -349,7 +392,7 @@ function _cb_after_setup_theme(): void {
  *
  * @access private
  * @see WP::parse_request()
- * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
+ * @global \WP_Rewrite $wp_rewrite WordPress rewrite component.
  *
  * @return string[] Array of requested path and requested file.
  */
@@ -363,7 +406,8 @@ function _parse_request(): array {
 	list( $pathinfo ) = explode( '?', $pathinfo );
 	$pathinfo         = str_replace( '%', '%25', $pathinfo );
 
-	list( $req_uri ) = explode( '?', $_SERVER['REQUEST_URI'] );  // phpcs:ignore
+	$req_uri         = $_SERVER['REQUEST_URI'] ?? '';  // phpcs:ignore
+	list( $req_uri ) = explode( '?', $req_uri );
 	$home_path       = parse_url( \home_url(), PHP_URL_PATH );  // phpcs:ignore
 	$home_path       = is_string( $home_path ) ? trim( $home_path, '/' ) : '';
 	$home_path_regex = sprintf( '|^%s|i', preg_quote( $home_path, '|' ) );
@@ -421,7 +465,7 @@ function _str_replace_one( string $search, string $replace, string $subject ): s
  * Determines whether the request is for page.
  *
  * @access private
- * @global WP_Rewrite $wp_rewrite WordPress rewrite component.
+ * @global \WP_Rewrite $wp_rewrite WordPress rewrite component.
  *
  * @param string $req_path Requested path.
  * @param string $req_file Requested file.
@@ -437,7 +481,7 @@ function _is_page_request( string $req_path, string $req_file ): array {
 		return array( false, null );
 	}
 	$req_match = $req_path;
-	foreach ( (array) $rewrite as $match => $query ) {
+	foreach ( $rewrite as $match => $query ) {
 		if ( ! empty( $req_file ) && strpos( $match, $req_file ) === 0 && $req_file !== $req_path ) {
 			$req_match = $req_file . '/' . $req_path;
 		}
@@ -524,20 +568,21 @@ function _cb_request( array $query_vars ): array {
  *
  * @param string $redirect_url  The redirect URL.
  * @param string $requested_url The requested URL.
- * @return string|false Filtered URL.
+ * @return string Filtered URL.
  */
-function _cb_redirect_canonical( string $redirect_url, string $requested_url ) {
+function _cb_redirect_canonical( string $redirect_url, string $requested_url ): string {
 	$inst = _get_instance();
 	if ( $inst->is_page_not_found ) {
-		return false;
+		return '';
 	}
 	if ( isset( $_SERVER['REQUEST_URI_ORIG'] ) ) {
-		// phpcs:disable
-		$host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'];
-		$url  = ( is_ssl() ? 'https://' : 'http://' ) . $host . $_SERVER['REQUEST_URI_ORIG'];
-		// phpcs:enable
+		$host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '';  // phpcs:ignore
+		if ( empty( $host ) ) {
+			return '';  // Failure.
+		}
+		$url = ( is_ssl() ? 'https://' : 'http://' ) . $host . $_SERVER['REQUEST_URI_ORIG'];  // phpcs:ignore
 		if ( $url === $redirect_url ) {
-			return false;  // For avoiding redirect loop.
+			return '';  // For avoiding redirect loop.
 		}
 		// When a redirect just for add/remove trailing slash occurs.
 		if ( untrailingslashit( $redirect_url ) === untrailingslashit( $requested_url ) ) {
@@ -608,7 +653,7 @@ function _cb_link( string $link, ?\WP_Post $post = null ): string {
 		foreach ( $inst->post_link_filters as $f ) {
 			$ret = call_user_func( $f, $inst->vars, $post );
 			if ( $ret ) {
-				$inst->vars = $ret;
+				$inst->vars = $ret;  // @phpstan-ignore-line
 			}
 		}
 	}
@@ -628,7 +673,13 @@ function _cb_link( string $link, ?\WP_Post $post = null ): string {
  *
  * @access private
  *
- * @return object Instance.
+ * @return object{
+ *     structures       : array{ var: string, slugs: string[], default_slug: string, omittable: bool, global: bool }[],
+ *     post_link_filters: callable[],
+ *     vars             : string[],
+ *     is_page_not_found: bool,
+ *     invalid_pagename : array<string|null>|null,
+ * } Instance.
  */
 function _get_instance(): object {
 	static $values = null;
@@ -639,7 +690,7 @@ function _get_instance(): object {
 		/**
 		 * The rewrite structures.
 		 *
-		 * @var array<string, mixed>[]
+		 * @var array{ var: string, slugs: string[], default_slug: string, omittable: bool, global: bool }[]
 		 */
 		public $structures = array();
 
@@ -667,7 +718,7 @@ function _get_instance(): object {
 		/**
 		 * The invalid pagename data.
 		 *
-		 * @var array<string|null>
+		 * @var array<string|null>|null
 		 */
 		public $invalid_pagename = null;
 	};

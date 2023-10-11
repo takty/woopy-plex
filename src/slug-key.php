@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-08-31
+ * @version 2023-10-11
  */
 
 namespace wpinc\plex;
@@ -22,7 +22,7 @@ function get_default_key( ?array $vars = null ): string {
 
 	$sk = wp_json_encode( $vars );
 	if ( ! isset( $ret[ $sk ] ) ) {
-		$temp       = implode( '_', custom_rewrite\get_structures( 'default_slug', $vars ) );
+		$temp       = implode( '_', custom_rewrite\get_structure_default_slugs( $vars ) );
 		$ret[ $sk ] = str_replace( '-', '_', $temp );
 	}
 	return $ret[ $sk ];
@@ -42,10 +42,10 @@ function get_query_key( ?array $vars = null ): string {
 		$temp = implode(
 			'_',
 			array_map(
-				function ( $v ) {
+				function ( string $v ) {
 					return custom_rewrite\get_query_var( $v );
 				},
-				custom_rewrite\get_structures( 'var', $vars )
+				custom_rewrite\get_structure_vars( $vars )
 			)
 		);
 
@@ -66,10 +66,10 @@ function get_argument_key( $args, ?array $vars = null ): string {
 		$key = implode(
 			'_',
 			array_map(
-				function ( $var ) use ( $args ) {
-					return $args[ $var ] ?? custom_rewrite\get_query_var( $var );
+				function ( string $v ) use ( $args ) {
+					return $args[ $v ] ?? custom_rewrite\get_query_var( $v );
 				},
-				custom_rewrite\get_structures( 'var', $vars )
+				custom_rewrite\get_structure_vars( $vars )
 			)
 		);
 		$key = str_replace( '-', '_', $key );
@@ -119,7 +119,7 @@ function get_slug_combination( ?array $vars = null ): array {
 	$sk = wp_json_encode( $vars );
 	if ( ! isset( $ret[ $sk ] ) ) {
 		$ret[ $sk ] = _generate_combination(
-			custom_rewrite\get_structures( 'slugs', $vars )
+			custom_rewrite\get_structure_slugs( $vars )
 		);
 	}
 	return $ret[ $sk ];
@@ -143,7 +143,7 @@ function _generate_combination( array $arrays ): array {
 	$cycles = array();
 
 	$c = $total;
-	foreach ( $arrays as $k => $vs ) {
+	foreach ( $arrays as $k => $_vs ) {
 		$c /= $counts[ $k ];
 
 		$cycles[ $k ] = $c;
