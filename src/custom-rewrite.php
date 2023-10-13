@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-11
+ * @version 2023-10-13
  */
 
 namespace wpinc\plex\custom_rewrite;
@@ -48,6 +48,7 @@ function add_structure( array $args ): void {
 			wp_die( '$args[\'default_slug\'] must be an element of $args[\'slugs\'] when omittable.' );
 		}
 		if ( empty( $args['default_slug'] ) ) {
+			// @phan-suppress-next-line PhanTypeArraySuspiciousNullable
 			$args['default_slug'] = $args['slugs'][0];
 		}
 	}
@@ -392,7 +393,7 @@ function _cb_after_setup_theme(): void {
  *
  * @access private
  * @see WP::parse_request()
- * @global \WP_Rewrite $wp_rewrite WordPress rewrite component.
+ * @global \WP_Rewrite $wp_rewrite
  *
  * @return string[] Array of requested path and requested file.
  */
@@ -465,7 +466,7 @@ function _str_replace_one( string $search, string $replace, string $subject ): s
  * Determines whether the request is for page.
  *
  * @access private
- * @global \WP_Rewrite $wp_rewrite WordPress rewrite component.
+ * @global \WP_Rewrite $wp_rewrite
  *
  * @param string $req_path Requested path.
  * @param string $req_file Requested file.

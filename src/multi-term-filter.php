@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-11
+ * @version 2023-10-13
  */
 
 namespace wpinc\plex\multi_term_filter;
@@ -48,7 +48,7 @@ function activate(): void {
 /**
  * Counts posts with terms.
  *
- * @global \wpdb $wpdb;
+ * @global \wpdb $wpdb
  *
  * @param string|string[] $post_type_s     A post type or an array of post types.
  * @param int[]           $term_taxonomies The array of term taxonomy ids.
@@ -126,7 +126,7 @@ function _get_post_type_from_query_vars( array $query_vars ): string {
  * Builds term relationships for JOIN clause.
  *
  * @access private
- * @global \wpdb $wpdb;
+ * @global \wpdb $wpdb
  *
  * @param int    $count    The number of joined tables.
  * @param string $wp_posts Table name of wp_posts.
@@ -146,7 +146,7 @@ function _build_join_term_relationships( int $count, string $wp_posts, string $t
  * Builds term relationships for WHERE clause.
  *
  * @access private
- * @global \wpdb $wpdb;
+ * @global \wpdb $wpdb
  *
  * @param int[] $term_taxonomies The array of term taxonomy ids.
  * @return string The WHERE clause.
@@ -155,7 +155,7 @@ function _build_where_term_relationships( array $term_taxonomies ): string {
 	global $wpdb;
 	$q = array();
 	foreach ( $term_taxonomies as $i => $tt ) {
-		$q[] = $wpdb->prepare( 'tr%d.term_taxonomy_id = %d', $i, $tt );
+		$q[] = $wpdb->prepare( 'tr%d.term_taxonomy_id = %d', array( $i, $tt ) );
 	}
 	return implode( ' AND ', $q );
 }
@@ -212,7 +212,7 @@ function _cb_get_adjacent_post_where( string $where, bool $_in_same_term, $_excl
  * Callback function for 'getarchives_join' filter.
  *
  * @access private
- * @global \wpdb $wpdb;
+ * @global \wpdb $wpdb
  *
  * @param string               $sql_join    Portion of SQL query containing the JOIN clause.
  * @param array<string, mixed> $parsed_args An array of default arguments.
@@ -256,7 +256,7 @@ function _cb_getarchives_where( string $sql_where, array $parsed_args ): string 
  * Callback function for 'posts_join' filter.
  *
  * @access private
- * @global \wpdb $wpdb;
+ * @global \wpdb $wpdb
  *
  * @param string    $join  The JOIN BY clause of the query.
  * @param \WP_Query $query The WP_Query instance (passed by reference).
@@ -285,7 +285,7 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
  * Callback function for 'posts_where' filter.
  *
  * @access private
- * @global \wpdb $wpdb;
+ * @global \wpdb $wpdb
  *
  * @param string    $where The WHERE clause of the query.
  * @param \WP_Query $query The WP_Query instance (passed by reference).
@@ -318,7 +318,7 @@ function _cb_posts_where( string $where, \WP_Query $query ): string {
  * Callback function for 'posts_groupby' filter.
  *
  * @access private
- * @global \wpdb $wpdb;
+ * @global \wpdb $wpdb
  *
  * @param string    $groupby The GROUP BY clause of the query.
  * @param \WP_Query $query   The WP_Query instance (passed by reference).

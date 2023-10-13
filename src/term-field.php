@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-11
+ * @version 2023-10-13
  */
 
 namespace wpinc\plex\term_field;
@@ -119,6 +119,7 @@ function activate( array $args = array() ): void {
  * Adds filters and actions for each taxonomies.
  *
  * @access private
+ * @global string $pagenow
  *
  * @param string[] $txs      Taxonomy slugs.
  * @param string[] $txs_desc Taxonomy slugs for custom descriptions.

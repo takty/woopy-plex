@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-11
+ * @version 2023-10-13
  */
 
 namespace wpinc\plex\post_field;
@@ -419,7 +419,7 @@ function _cb_add_meta_boxes(): void {
  * Function that echos the field of title and content.
  *
  * @access private
- * @global $post
+ * @global \WP_Post $post
  *
  * @param string $key The key of the fields.
  */

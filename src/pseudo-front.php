@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-11
+ * @version 2023-10-13
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -186,6 +186,7 @@ function _cb_page_link( string $link, int $post_id ): string {
  * Retrieves raw page link.
  *
  * @access private
+ * @global \WP_Rewrite $wp_rewrite
  *
  * @param int $post_id The ID of the page.
  * @return string|null The raw page link.
