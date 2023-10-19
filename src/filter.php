@@ -240,8 +240,13 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 	}
 	if ( $is_filtered ) {
 		$t    = get_term_by( 'term_taxonomy_id', $tt_id );
-		$tars = $t ? array( $t ) : array();
+		$tars = ( $t instanceof \WP_Term ) ? array( $t ) : array();
 	} else {
+		/**
+		 * Terms. This is determined by $args['fields'] being 'all'.
+		 *
+		 * @var \WP_Term[]|\WP_Error $tars
+		 */
 		$tars = get_terms(
 			array(
 				'taxonomy'   => $inst->txs_counted,
@@ -255,9 +260,6 @@ function _cb_edited_term_taxonomy( int $tt_id, string $taxonomy ): void {
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars );
 
 	foreach ( $tars as $tar ) {
-		if ( ! ( $tar instanceof \WP_Term ) ) {
-			continue;
-		}
 		$tt_id   = $tar->term_taxonomy_id;
 		$term_id = $tar->term_id;
 
