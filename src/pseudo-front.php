@@ -34,6 +34,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 
 /**
  * Activates the pseudo-front.
+ * '@psalm-suppress' used because hooks "option_{$option}" is not recognized.
  *
  * @psalm-suppress HookNotFound
  *
@@ -70,6 +71,11 @@ function activate( array $args = array() ): void {
 
 		add_filter( 'query_vars', '\wpinc\plex\pseudo_front\_cb_query_vars' );
 		add_action( 'admin_menu', '\wpinc\plex\pseudo_front\_cb_admin_menu', 10, 0 );
+		/**
+		 * Because the definition of 'submenu_file' and the actual argument type are different.
+		 *
+		 * @psalm-suppress InvalidArgument
+		 */
 		add_filter( 'submenu_file', '\wpinc\plex\pseudo_front\_cb_submenu_file', 10, 2 );
 		add_action( 'parse_query', '\wpinc\plex\pseudo_front\_cb_parse_query' );
 
@@ -395,11 +401,11 @@ function _cb_admin_menu(): void {
  * @access private
  * @global \WP_Post|null $post
  *
- * @param string $submenu_file The submenu file.
- * @param string $parent_file  The submenu item's parent file.
- * @return string The filtered file.
+ * @param string|null $submenu_file The submenu file.
+ * @param string      $parent_file  The submenu item's parent file.
+ * @return string|null The filtered file.
  */
-function _cb_submenu_file( string $submenu_file, string $parent_file ): string {
+function _cb_submenu_file( ?string $submenu_file, string $parent_file ): ?string {
 	global $post;
 	if ( EDIT_PAGE_URL === $parent_file ) {
 		if ( $post ) {
