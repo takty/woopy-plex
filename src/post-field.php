@@ -341,7 +341,7 @@ function _cb_save_post( int $post_id ): void {
 	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 
 	foreach ( $skc as $key => $_slugs ) {
-		$nonce = $_POST[ "post_{$key}_nonce" ] ?? '';  // phpcs:ignore
+		$nonce = $_POST[ "post_{$key}_nonce" ] ?? null;  // phpcs:ignore
 		if ( ! is_string( $nonce ) ) {
 			continue;
 		}

@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-13
+ * @version 2023-10-19
  */
 
 namespace wpinc\plex\pseudo_front;
@@ -194,7 +194,10 @@ function _cb_page_link( string $link, int $post_id ): string {
 function _get_raw_page_link( int $post_id ): ?string {
 	global $wp_rewrite;
 	$struct = $wp_rewrite->get_page_permastruct();
-	$p      = get_post( $post_id );
+	if ( ! is_string( $struct ) ) {
+		return null;
+	}
+	$p = get_post( $post_id );
 	if ( ! ( $p instanceof \WP_Post ) ) {
 		return null;
 	}
