@@ -7,6 +7,8 @@
  * @version 2023-10-19
  */
 
+declare(strict_types=1);
+
 namespace wpinc\plex\pseudo_front;
 
 require_once __DIR__ . '/custom-rewrite.php';

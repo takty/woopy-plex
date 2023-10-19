@@ -4,8 +4,10 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-11
+ * @version 2023-10-19
  */
+
+declare(strict_types=1);
 
 namespace wpinc\plex\filter;
 
