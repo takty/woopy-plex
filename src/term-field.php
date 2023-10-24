@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2023-10-24
  */
 
 declare(strict_types=1);
@@ -421,7 +421,7 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ): void {
 		$lab_n  = "$lab_base_n $lab_pf";
 
 		$id_name_sn = $inst->key_default_sg_name;
-		$val_sn     = ( is_array( $t_meta ) && isset( $t_meta[ $id_name_sn ] ) && is_string( $t_meta[ $id_name_sn ] ) ) ? $t_meta[ $id_name_sn ][0] : '';
+		$val_sn     = ( is_array( $t_meta ) && isset( $t_meta[ $id_name_sn ] ) && is_array( $t_meta[ $id_name_sn ] ) ) ? $t_meta[ $id_name_sn ][0] : '';
 		_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'wpinc_plex' ), $id_name_sn, $id_name_sn, $val_sn );
 	}
 	$skc = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
@@ -431,20 +431,20 @@ function _cb_taxonomy_edit_form_fields( \WP_Term $t, string $taxonomy ): void {
 
 		$id_n   = $inst->key_pre_name . $key;
 		$name_n = $inst->key_pre_name . "array[$key]";
-		$val_n  = ( is_array( $t_meta ) && isset( $t_meta[ $id_n ] ) && is_string( $t_meta[ $id_n ] ) ) ? $t_meta[ $id_n ][0] : '';
+		$val_n  = ( is_array( $t_meta ) && isset( $t_meta[ $id_n ] ) && is_array( $t_meta[ $id_n ] ) ) ? $t_meta[ $id_n ][0] : '';
 		_echo_name_field( $lab_n, $id_n, $name_n, $val_n, 'padding-bottom: 6px;' );
 
 		if ( $has_sn ) {
 			$id_sn   = $inst->key_pre_sg_name . $key;
 			$name_sn = $inst->key_pre_sg_name . "array[$key]";
-			$val_sn  = ( is_array( $t_meta ) && isset( $t_meta[ $id_sn ] ) && is_string( $t_meta[ $id_sn ] ) ) ? $t_meta[ $id_sn ][0] : '';
+			$val_sn  = ( is_array( $t_meta ) && isset( $t_meta[ $id_sn ] ) && is_array( $t_meta[ $id_sn ] ) ) ? $t_meta[ $id_sn ][0] : '';
 			_echo_name_field( $lab_n . _x( ' (Singular Form)', 'term field', 'wpinc_plex' ), $id_sn, $name_sn, $val_sn, 'padding-top: 6px;' );
 		}
 		if ( $has_desc ) {
 			$lab_d  = __( 'Description' ) . " $lab_pf";
 			$id_d   = $inst->key_pre_description . $key;
 			$name_d = $inst->key_pre_description . "array[$key]";
-			$val_d  = ( is_array( $t_meta ) && isset( $t_meta[ $id_d ] ) && is_string( $t_meta[ $id_d ] ) ) ? $t_meta[ $id_d ][0] : '';
+			$val_d  = ( is_array( $t_meta ) && isset( $t_meta[ $id_d ] ) && is_array( $t_meta[ $id_d ] ) ) ? $t_meta[ $id_d ][0] : '';
 			_echo_description_field( $lab_d, $id_d, $name_d, $val_d );
 		}
 	}
