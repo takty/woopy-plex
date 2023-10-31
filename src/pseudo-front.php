@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2023-10-31
  */
 
 declare(strict_types=1);
@@ -144,7 +144,7 @@ function _get_front_page_ids(): array {
 
 
 /**
- * Callback function for 'option_{$option}' filter.
+ * Callback function for 'option_{$option}' filter (page_on_front).
  *
  * @access private
  * @global \WP_Post|null $post
@@ -233,7 +233,7 @@ function _cb_redirect_canonical( string $redirect_url ) {
 }
 
 /**
- * Callback function for 'option_{$option}' filter.
+ * Callback function for 'option_{$option}' filter (blogname).
  *
  * @access private
  *
@@ -249,7 +249,7 @@ function _cb_option_blogname( string $value ): string {
 }
 
 /**
- * Callback function for 'option_{$option}' filter.
+ * Callback function for 'option_{$option}' filter (blogdescription).
  *
  * @access private
  *

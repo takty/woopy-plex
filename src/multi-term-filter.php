@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2023-10-31
  */
 
 declare(strict_types=1);
@@ -110,9 +110,9 @@ function _get_term_taxonomy_ids( ?string $post_type = null ): ?array {
  * @access private
  *
  * @param array<string, mixed> $query_vars Array of query vars.
- * @return string Post type.
+ * @return string|null Post type.
  */
-function _get_post_type_from_query_vars( array $query_vars ): string {
+function _get_post_type_from_query_vars( array $query_vars ): ?string {
 	$pt = '';  // Must be initialized with '' to distinguish it from null.
 	if ( ! empty( $query_vars['post_type'] ) ) {
 		if ( is_array( $query_vars['post_type'] ) ) {
@@ -267,6 +267,12 @@ function _cb_getarchives_where( string $sql_where, array $parsed_args ): string 
 function _cb_posts_join( string $join, \WP_Query $query ): string {
 	if ( $query->is_search() ) {
 		$tts = _get_term_taxonomy_ids();  // Call when is_search() is true.
+	} elseif (
+		'page' === get_option( 'show_on_front' ) &&
+		is_numeric( get_option( 'page_for_posts' ) ) &&
+		(int) get_option( 'page_for_posts' ) === $query->queried_object_id
+	) {
+		$tts = _get_term_taxonomy_ids( 'post' );
 	} else {
 		$pt  = _get_post_type_from_query_vars( $query->query_vars );
 		$tts = _get_term_taxonomy_ids( $pt );  // $pt is '' when the post type is unknown.
@@ -296,6 +302,12 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 function _cb_posts_where( string $where, \WP_Query $query ): string {
 	if ( $query->is_search() ) {
 		$tts = _get_term_taxonomy_ids();  // Call when is_search() is true.
+	} elseif (
+		'page' === get_option( 'show_on_front' ) &&
+		is_numeric( get_option( 'page_for_posts' ) ) &&
+		(int) get_option( 'page_for_posts' ) === $query->queried_object_id
+	) {
+		$tts = _get_term_taxonomy_ids( 'post' );
 	} else {
 		$pt  = _get_post_type_from_query_vars( $query->query_vars );
 		$tts = _get_term_taxonomy_ids( $pt );  // $pt is '' when the post type is unknown.
