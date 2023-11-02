@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2023-11-01
  */
 
 declare(strict_types=1);
@@ -314,8 +314,8 @@ function _cb_widgets_init(): void {
 				'label'     => _x( 'Content', 'post field', 'wpinc_plex' ) . " $lab_pf",
 				'post_type' => $pt,
 			);
-			\wpinc\blok\input\add_block( $as_t );  // @phpstan-ignore-line
-			\wpinc\blok\field\add_block( $as_c );  // @phpstan-ignore-line
+			\wpinc\blok\input\add_block( $as_t );
+			\wpinc\blok\field\add_block( $as_c );
 		}
 	}
 }
