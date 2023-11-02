@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-11-01
+ * @version 2023-11-02
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
  *     @type array  'vars'               Query variable names.
  *     @type string 'editor_type'        Editor type to be activated: 'block' or 'classic'. Default 'block'.
  *     @type string 'title_key_prefix'   Key prefix of post metadata for custom title. Default '_post_title_'.
- *     @type string 'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_field_'.
+ *     @type string 'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_content_'.
  * }
  */
 function activate( array $args = array() ): void {
@@ -64,7 +64,7 @@ function activate( array $args = array() ): void {
 		'vars'               => array(),
 		'editor_type'        => 'block',
 		'title_key_prefix'   => '_post_title_',
-		'content_key_prefix' => '_post_field_',
+		'content_key_prefix' => '_post_content_',
 	);
 
 	$inst->vars            = $args['vars'];  // @phpstan-ignore-line
