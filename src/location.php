@@ -130,7 +130,11 @@ function _cb_wp_nav_menu_args( array $args ): array {
 	$key = \wpinc\plex\get_query_key();
 
 	if ( \wpinc\plex\get_default_key() !== $key ) {
-		if ( isset( $args['theme_location'] ) && ! empty( $args['theme_location'] ) ) {
+		if (
+			isset( $args['theme_location'] ) &&
+			is_string( $args['theme_location'] ) &&
+			! empty( $args['theme_location'] )
+		) {
 			$loc = $args['theme_location'];
 			$id  = "{$loc}-" . str_replace( '_', '-', $key );
 
@@ -161,7 +165,7 @@ function _cb_widgets_init(): void {
 			continue;
 		}
 		foreach ( $ss as $sidebar ) {
-			$inst->sidebar_ids[] = $sidebar['id'];
+			$inst->sidebar_ids[] = $sidebar['id'];  // @phpstan-ignore-line
 
 			$lab    = esc_html( \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format ) );
 			$id_new = "{$sidebar['id']}-" . str_replace( '_', '-', $key );
