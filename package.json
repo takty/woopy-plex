@@ -24,9 +24,9 @@
 		"not dead"
 	],
 	"dependencies": {
-		"gettext-parser": "^7.0.1",
+		"gettext-parser": "^8.0.0",
 		"gulp": "^4.0.2",
-		"gulp-changed": "^4.0.3",
+		"gulp-changed": "^5.0.2",
 		"gulp-ignore": "^3.0.0",
 		"gulp-plumber": "^1.2.1"
 	}
