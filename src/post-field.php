@@ -61,7 +61,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
  *     @type string        'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_content_'.
  * }
  */
-function activate( array $args ): void {
+function activate( array $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
