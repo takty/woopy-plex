@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-11-02
+ * @version 2024-03-01
  */
 
 declare(strict_types=1);
@@ -41,19 +41,27 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 	}
 }
 
-/**
+/** phpcs:ignore
  * Activates the post content.
  *
- * @param array<string, mixed> $args {
+ * phpcs:ignore
+ * @param array{
+ *     vars?              : string[]|null,
+ *     editor_type?       : string,
+ *     title_key_prefix?  : string,
+ *     content_key_prefix?: string,
+ * } $args (Optional) Configuration arguments.
+ *
+ * $args {
  *     (Optional) Configuration arguments.
  *
- *     @type array  'vars'               Query variable names.
- *     @type string 'editor_type'        Editor type to be activated: 'block' or 'classic'. Default 'block'.
- *     @type string 'title_key_prefix'   Key prefix of post metadata for custom title. Default '_post_title_'.
- *     @type string 'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_content_'.
+ *     @type string[]|null 'vars'               Query variable names. Default null.
+ *     @type string        'editor_type'        Editor type to be activated: 'block', 'classic', or 'both'. Default 'block'.
+ *     @type string        'title_key_prefix'   Key prefix of post metadata for custom title. Default '_post_title_'.
+ *     @type string        'content_key_prefix' Key prefix of post metadata for custom content. Default '_post_content_'.
  * }
  */
-function activate( array $args = array() ): void {
+function activate( array $args ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -61,7 +69,7 @@ function activate( array $args = array() ): void {
 	$inst = _get_instance();
 
 	$args += array(
-		'vars'               => array(),
+		'vars'               => null,
 		'editor_type'        => 'block',
 		'title_key_prefix'   => '_post_title_',
 		'content_key_prefix' => '_post_content_',
@@ -72,15 +80,15 @@ function activate( array $args = array() ): void {
 	$inst->key_pre_title   = $args['title_key_prefix'];  // @phpstan-ignore-line
 	$inst->key_pre_content = $args['content_key_prefix'];  // @phpstan-ignore-line
 
-	if ( 'block' === $inst->editor_type ) {
-		if ( did_action( 'widgets_init' ) ) {
-			_cb_widgets_init();
-		} else {
-			add_action( 'widgets_init', '\wpinc\plex\post_field\_cb_widgets_init' );
+	if ( is_admin() || wp_doing_ajax() ) {
+		if ( 'block' === $inst->editor_type || 'both' === $inst->editor_type ) {
+			if ( did_action( 'widgets_init' ) ) {
+				_cb_widgets_init();
+			} else {
+				add_action( 'widgets_init', '\wpinc\plex\post_field\_cb_widgets_init' );
+			}
 		}
-	}
-	if ( is_admin() ) {
-		if ( 'classic' === $inst->editor_type ) {
+		if ( 'classic' === $inst->editor_type || 'both' === $inst->editor_type ) {
 			add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
 			add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes', 10, 0 );
 			foreach ( $inst->post_types as $pt ) {
@@ -305,14 +313,17 @@ function _cb_widgets_init(): void {
 		foreach ( $skc as $key => $slugs ) {
 			$lab_pf = \wpinc\plex\get_admin_label( $slugs, $inst->slug_to_label, $inst->label_format );
 			$as_t   = array(
-				'key'       => $inst->key_pre_title . $key,
-				'label'     => _x( 'Title', 'post field', 'wpinc_plex' ) . " $lab_pf",
-				'post_type' => $pt,
+				'key'                => $inst->key_pre_title . $key,
+				'label'              => _x( 'Title', 'post field', 'wpinc_plex' ) . " $lab_pf",
+				'post_type'          => $pt,
+				'do_support_classic' => 'both' === $inst->editor_type,
 			);
 			$as_c   = array(
-				'key'       => $inst->key_pre_content . $key,
-				'label'     => _x( 'Content', 'post field', 'wpinc_plex' ) . " $lab_pf",
-				'post_type' => $pt,
+				'key'                => $inst->key_pre_content . $key,
+				'label'              => _x( 'Content', 'post field', 'wpinc_plex' ) . " $lab_pf",
+				'post_type'          => $pt,
+				'do_render'          => true,
+				'do_support_classic' => 'both' === $inst->editor_type,
 			);
 			\wpinc\blok\input\add_block( $as_t );
 			\wpinc\blok\field\add_block( $as_c );
