@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2024-03-01
+ * @version 2024-03-03
  */
 
 declare(strict_types=1);
@@ -89,7 +89,6 @@ function activate( array $args = array() ): void {
 			}
 		}
 		if ( 'classic' === $inst->editor_type || 'both' === $inst->editor_type ) {
-			add_action( 'admin_head', '\wpinc\plex\post_field\_cb_admin_head' );
 			add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes', 10, 0 );
 			foreach ( $inst->post_types as $pt ) {
 				add_action( "save_post_$pt", '\wpinc\plex\post_field\_cb_save_post', 10 );
@@ -375,34 +374,14 @@ function _cb_save_post( int $post_id ): void {
 }
 
 /**
- * Callback function for 'admin_head' action.
- *
- * @access private
- */
-function _cb_admin_head(): void {
-	?>
-<style>
-	.wpinc-plex-post-field-title input {
-		width  : 100%;
-		height : 1.7em;
-		margin : 0 0 6px;
-		padding: 3px 8px;
-
-		font-size       : 1.7em;
-		line-height     : 100%;
-		background-color: #fff;
-		outline         : none;
-	}
-</style>
-	<?php
-}
-
-/**
  * Callback function for 'add_meta_boxes' action.
  *
  * @access private
  */
 function _cb_add_meta_boxes(): void {
+	$data = '.wpinc-plex-post-field-title input{width:100%;height:1.7em;margin:0 0 6px;padding:3px 8px;font-size:1.7em;line-height:100%;background-color:#fff;outline:none}';
+	wp_add_inline_style( 'wp-admin', $data );
+
 	$inst = _get_instance();
 	$skc  = \wpinc\plex\get_slug_key_to_combination( $inst->vars, true );
 
@@ -422,7 +401,8 @@ function _cb_add_meta_boxes(): void {
 				},
 				$pt,
 				'advanced',
-				'high'
+				'high',
+				array( '__back_compat_meta_box' => true )
 			);
 		}
 	}
