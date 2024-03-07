@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2024-03-03
+ * @version 2024-03-07
  */
 
 declare(strict_types=1);
@@ -80,14 +80,15 @@ function activate( array $args = array() ): void {
 	$inst->key_pre_title   = $args['title_key_prefix'];  // @phpstan-ignore-line
 	$inst->key_pre_content = $args['content_key_prefix'];  // @phpstan-ignore-line
 
-	if ( is_admin() || wp_doing_ajax() ) {
-		if ( 'block' === $inst->editor_type || 'both' === $inst->editor_type ) {
-			if ( did_action( 'widgets_init' ) ) {
-				_cb_widgets_init();
-			} else {
-				add_action( 'widgets_init', '\wpinc\plex\post_field\_cb_widgets_init' );
-			}
+	if ( 'block' === $inst->editor_type || 'both' === $inst->editor_type ) {
+		// The following hook need to be set regardless is_admin() is false.
+		if ( did_action( 'widgets_init' ) ) {
+			_cb_widgets_init();
+		} else {
+			add_action( 'widgets_init', '\wpinc\plex\post_field\_cb_widgets_init' );
 		}
+	}
+	if ( is_admin() || wp_doing_ajax() ) {
 		if ( 'classic' === $inst->editor_type || 'both' === $inst->editor_type ) {
 			add_action( 'add_meta_boxes', '\wpinc\plex\post_field\_cb_add_meta_boxes', 10, 0 );
 			foreach ( $inst->post_types as $pt ) {
