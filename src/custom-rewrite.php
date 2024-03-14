@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -39,17 +39,17 @@ function add_structure( array $args ): void {
 		'omittable'    => false,
 		'global'       => false,
 	);
-	if ( empty( $args['var'] ) ) {
-		wp_die( '$args[\'var\'] must be assigned.' );
+	if ( '' === $args['var'] ) {
+		wp_die( '$args[\'var\'] must be a non-empty string.' );
 	}
 	if ( empty( $args['slugs'] ) ) {
 		wp_die( '$args[\'slugs\'] must be a non-empty array.' );
 	}
 	if ( $args['omittable'] ) {
-		if ( ! empty( $args['default_slug'] ) && ! in_array( $args['default_slug'], $args['slugs'], true ) ) {
+		if ( '' !== $args['default_slug'] && ! in_array( $args['default_slug'], $args['slugs'], true ) ) {
 			wp_die( '$args[\'default_slug\'] must be an element of $args[\'slugs\'] when omittable.' );
 		}
-		if ( empty( $args['default_slug'] ) ) {
+		if ( '' === $args['default_slug'] ) {
 			// @phan-suppress-next-line PhanTypeArraySuspiciousNullable
 			$args['default_slug'] = $args['slugs'][0];
 		}
@@ -75,7 +75,7 @@ function activate(): void {
 		return;
 	}
 	if ( ! is_admin() ) {
-		add_action( 'after_setup_theme', '\wpinc\plex\custom_rewrite\_cb_after_setup_theme', 1 );
+		add_action( 'after_setup_theme', '\wpinc\plex\custom_rewrite\_cb_after_setup_theme', 1, 0 );
 		add_filter( 'request', '\wpinc\plex\custom_rewrite\_cb_request' );
 		add_filter( 'redirect_canonical', '\wpinc\plex\custom_rewrite\_cb_redirect_canonical', 1, 2 );
 	}
@@ -125,7 +125,7 @@ function get_query_var( string $var_name, string $default_val = '' ): string {
  */
 function get_structures( ?string $field = null, ?array $vars = null ) {
 	$structs = _get_instance()->structures;
-	if ( $vars ) {
+	if ( is_array( $vars ) ) {
 		$structs = array_filter(
 			$structs,
 			function ( $st ) use ( $vars ) {
@@ -134,7 +134,7 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
 		);
 		$structs = array_values( $structs );
 	}
-	if ( $field ) {
+	if ( is_string( $field ) ) {
 		return array_column( $structs, $field );
 	}
 	return $structs;
@@ -143,36 +143,39 @@ function get_structures( ?string $field = null, ?array $vars = null ) {
 /**
  * Retrieves slugs of the rewrite structures.
  *
- * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+ * @psalm-suppress MoreSpecificReturnType
  *
  * @param string[]|null $vars  (Optional) Variable names for filtering.
  * @return list<string[]> Slugs.
  */
 function get_structure_slugs( ?array $vars = null ): array {
+	/** @psalm-suppress LessSpecificReturnStatement */  // phpcs:ignore
 	return get_structures( 'slugs', $vars );  // @phpstan-ignore-line
 }
 
 /**
  * Retrieves vars of the rewrite structures.
  *
- * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+ * @psalm-suppress InvalidReturnType
  *
  * @param string[]|null $vars  (Optional) Variable names for filtering.
  * @return string[] Vars.
  */
 function get_structure_vars( ?array $vars = null ): array {
+	/** @psalm-suppress InvalidReturnStatement */  // phpcs:ignore
 	return get_structures( 'var', $vars );  // @phpstan-ignore-line
 }
 
 /**
  * Retrieves default slugs of the rewrite structures.
  *
- * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+ * @psalm-suppress InvalidReturnType
  *
  * @param string[]|null $vars  (Optional) Variable names for filtering.
  * @return string[] Default slugs.
  */
 function get_structure_default_slugs( ?array $vars = null ): array {
+	/** @psalm-suppress InvalidReturnStatement */  // phpcs:ignore
 	return get_structures( 'default_slug', $vars );  // @phpstan-ignore-line
 }
 
@@ -197,7 +200,7 @@ function build_full_path( array $vars = array() ): string {
 
 	$vars += $inst->vars;
 	foreach ( $inst->structures as $st ) {
-		if ( empty( $vars[ $st['var'] ] ) ) {
+		if ( '' === ( $vars[ $st['var'] ] ?? '' ) ) {
 			if ( ! $st['omittable'] ) {
 				break;
 			}
@@ -222,7 +225,11 @@ function build_norm_path( array $vars = array() ): string {
 
 	$vars += $inst->vars;
 	foreach ( $inst->structures as $st ) {
-		$v = empty( $vars[ $st['var'] ] ) ? $st['default_slug'] : $vars[ $st['var'] ];
+		if ( '' === ( $vars[ $st['var'] ] ?? '' ) ) {
+			$v = $st['default_slug'];
+		} else {
+			$v = $vars[ $st['var'] ];
+		}
 		if ( ! $st['omittable'] || $v !== $st['default_slug'] ) {
 			$ps[] = $v;
 		}
@@ -247,7 +254,7 @@ function build_norm_path( array $vars = array() ): string {
 function _replace_path( string $url, string $before, string $after ): string {
 	$home = wp_parse_url( \home_url(), PHP_URL_PATH );
 	$home = is_string( $home ) ? trim( $home, '/' ) : '';
-	$home = empty( $home ) ? '/' : "/$home/";
+	$home = ( '' === $home ) ? '/' : "/$home/";
 	$pu   = wp_parse_url( $url );
 
 	// phpcs:disable
@@ -345,21 +352,24 @@ function _cb_after_setup_theme(): void {
 	list( $req, $req_file )   = _parse_request();
 	list( $inst->vars, $cur ) = _extract_vars( $req );  // @phpstan-ignore-line
 	_register_globals();
-	if ( empty( $req ) ) {
+	if ( '' === $req ) {
 		return;
 	}
 	$full = build_full_path( $inst->vars );
 	$norm = build_norm_path( $inst->vars );
 
-	$erased = trim( empty( $cur ) ? "/$req/" : _str_replace_one( "/$cur/", '/', "/$req/" ), '/' );
-	$added  = trim( empty( $cur ) ? "/$full/$req/" : _str_replace_one( "/$cur/", "/$full/", "/$req/" ), '/' );
-	$ideal  = trim( empty( $cur ) ? "/$norm/$req/" : _str_replace_one( "/$cur/", "/$norm/", "/$req/" ), '/' );
+	$erased = trim( ( '' === $cur ) ? "/$req/" : _str_replace_one( "/$cur/", '/', "/$req/" ), '/' );
+	$added  = trim( ( '' === $cur ) ? "/$full/$req/" : _str_replace_one( "/$cur/", "/$full/", "/$req/" ), '/' );
+	$ideal  = trim( ( '' === $cur ) ? "/$norm/$req/" : _str_replace_one( "/$cur/", "/$norm/", "/$req/" ), '/' );
 
 	list( $is_page_req, ) = _is_page_request( $erased, $req_file );
 
 	if ( $is_page_req ) {
 		list( , $pn_added ) = _is_page_request( $added, $req_file );
-		if ( ! empty( $pn_added ) && get_page_by_path( $pn_added ) ) {
+		if (
+			is_string( $pn_added ) && '' !== $pn_added  // Check for non-empty-string.
+			&& get_page_by_path( $pn_added )
+		) {
 			if ( $cur !== $norm ) {
 				_redirect( $req, $ideal );
 			}
@@ -369,7 +379,7 @@ function _cb_after_setup_theme(): void {
 
 			if ( is_user_logged_in() ) {
 				list( , $pn_orig ) = _is_page_request( $req, $req_file );
-				if ( $pn_orig ) {
+				if ( is_string( $pn_orig ) && '' !== $pn_orig ) {  // Check for non-empty-string.
 					$post_orig = get_page_by_path( $pn_orig );
 					if ( $post_orig ) {
 						$inst->invalid_pagename = array( $pn_orig, $pn_added );  // @phpstan-ignore-line
@@ -423,7 +433,7 @@ function _parse_request(): array {
 	$pathinfo = preg_replace( $home_path_regex, '', $pathinfo );
 	$pathinfo = trim( $pathinfo ?? '', '/' );
 
-	if ( ! empty( $pathinfo ) && ! preg_match( '|^.*' . $wp_rewrite->index . '$|', $pathinfo ) ) {
+	if ( '' !== $pathinfo && ! preg_match( '|^.*' . $wp_rewrite->index . '$|', $pathinfo ) ) {
 		$req_path = $pathinfo;
 	} else {
 		if ( $req_uri === $wp_rewrite->index ) {
@@ -475,7 +485,7 @@ function _str_replace_one( string $search, string $replace, string $subject ): s
  * @return array{bool, string|null} Array of boolean value and pagename.
  */
 function _is_page_request( string $req_path, string $req_file ): array {
-	if ( empty( $req_path ) ) {
+	if ( '' === $req_path ) {
 		return array( true, '' );
 	}
 	global $wp_rewrite;
@@ -485,7 +495,7 @@ function _is_page_request( string $req_path, string $req_file ): array {
 	}
 	$req_match = $req_path;
 	foreach ( $rewrite as $match => $query ) {
-		if ( ! empty( $req_file ) && strpos( $match, $req_file ) === 0 && $req_file !== $req_path ) {
+		if ( '' !== $req_file && strpos( $match, $req_file ) === 0 && $req_file !== $req_path ) {
 			$req_match = $req_file . '/' . $req_path;
 		}
 		if ( preg_match( "#^$match#", $req_match, $matches ) || preg_match( "#^$match#", urldecode( $req_match ), $matches ) ) {
@@ -513,7 +523,7 @@ function _has_feed_query(): bool {
 			return true;
 		}
 		$kv = explode( '=', $part );
-		if ( ! empty( $kv[0] ) && 'feed' === $kv[0] ) {
+		if ( 'feed' === $kv[0] ) {
 			return true;
 		}
 	}
@@ -580,7 +590,7 @@ function _cb_redirect_canonical( string $redirect_url, string $requested_url ): 
 	}
 	if ( isset( $_SERVER['REQUEST_URI_ORIG'] ) ) {
 		$host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '';  // phpcs:ignore
-		if ( empty( $host ) ) {
+		if ( '' === $host ) {
 			return '';  // Failure.
 		}
 		$url = ( is_ssl() ? 'https://' : 'http://' ) . $host . $_SERVER['REQUEST_URI_ORIG'];  // phpcs:ignore

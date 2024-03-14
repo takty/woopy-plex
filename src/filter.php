@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -62,6 +62,7 @@ function add_filter_taxonomy( string $var_name, array $args = array() ): void { 
 	$slug_to_label   = $args['slug_to_label'];
 	unset( $args['taxonomy'], $args['do_insert_terms'], $args['slug_to_label'] );
 
+	/** @psalm-suppress InvalidArgument */  // phpcs:ignore
 	register_taxonomy( $tx, '', $args );
 
 	if ( $do_insert_terms ) {

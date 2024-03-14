@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-31
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -27,16 +27,13 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
-	if ( $format ) {
+	if ( is_string( $format ) ) {
 		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
 
 /**
  * Activates the pseudo-front.
- * '@psalm-suppress' used because hooks "option_{$option}" is not recognized.
- *
- * @psalm-suppress HookNotFound
  *
  * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
@@ -67,7 +64,7 @@ function activate( array $args = array() ): void {
 	}
 
 	if ( is_admin() ) {
-		add_action( 'admin_init', '\wpinc\plex\pseudo_front\_cb_admin_init' );
+		add_action( 'admin_init', '\wpinc\plex\pseudo_front\_cb_admin_init', 10, 0 );
 
 		add_filter( 'query_vars', '\wpinc\plex\pseudo_front\_cb_query_vars' );
 		add_action( 'admin_menu', '\wpinc\plex\pseudo_front\_cb_admin_menu', 10, 0 );
@@ -80,7 +77,7 @@ function activate( array $args = array() ): void {
 		add_action( 'parse_query', '\wpinc\plex\pseudo_front\_cb_parse_query' );
 
 		add_filter( 'display_post_states', '\wpinc\plex\pseudo_front\_cb_display_post_states', 10, 2 );
-		add_action( 'admin_head', '\wpinc\plex\pseudo_front\_cb_admin_head' );
+		add_action( 'admin_head', '\wpinc\plex\pseudo_front\_cb_admin_head', 10, 0 );
 	} else {
 		add_filter( 'option_page_on_front', '\wpinc\plex\pseudo_front\_cb_option_page_on_front' );
 		add_filter( 'page_link', '\wpinc\plex\pseudo_front\_cb_page_link', 9, 2 );  // Add a hook before that of custom-rewrite.
@@ -108,10 +105,10 @@ function activate( array $args = array() ): void {
  */
 function home_url( string $path = '', ?string $scheme = null, array $vars = array() ): string {
 	$fp = \wpinc\plex\custom_rewrite\build_norm_path( $vars );
-	if ( ! empty( $fp ) ) {
+	if ( '' !== $fp ) {
 		$fp = "/$fp";
 	}
-	if ( ! empty( $path ) ) {
+	if ( '' !== $path ) {
 		$path = '/' . ltrim( $path, '/' );
 	}
 	return \home_url( $fp . $path, $scheme );
@@ -182,7 +179,7 @@ function _cb_page_link( string $link, int $post_id ): string {
 			$link = \home_url( '/' );
 		} else {
 			$temp = _get_raw_page_link( $post_id );
-			if ( $temp ) {
+			if ( is_string( $temp ) ) {
 				$link = $temp;
 			}
 		}
@@ -210,7 +207,7 @@ function _get_raw_page_link( int $post_id ): ?string {
 		return null;
 	}
 	$path = get_page_uri( $p );
-	if ( ! $path ) {
+	if ( ! is_string( $path ) ) {
 		return null;
 	}
 	$link = \home_url( str_replace( '%pagename%', $path, $struct ) );
@@ -242,7 +239,7 @@ function _cb_redirect_canonical( string $redirect_url ) {
  */
 function _cb_option_blogname( string $value ): string {
 	$ret = get_option( 'blogname_' . \wpinc\plex\get_query_key() );
-	if ( empty( $ret ) || ! is_string( $ret ) ) {
+	if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 		return $value;
 	}
 	return $ret;
@@ -258,7 +255,7 @@ function _cb_option_blogname( string $value ): string {
  */
 function _cb_option_blogdescription( string $value ): string {
 	$ret = get_option( 'blogdescription_' . \wpinc\plex\get_query_key() );
-	if ( empty( $ret ) || ! is_string( $ret ) ) {
+	if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 		return $value;
 	}
 	return $ret;
@@ -277,7 +274,7 @@ function _cb_body_class( array $classes ): array {
 	$vars = \wpinc\plex\custom_rewrite\get_structure_vars();
 	foreach ( $vars as $var ) {
 		$val = \wpinc\plex\custom_rewrite\get_query_var( $var );
-		if ( ! empty( $val ) ) {
+		if ( '' !== $val ) {
 			$cs[] = str_replace( '_', '-', "$var-$val" );
 		}
 	}
@@ -338,7 +335,7 @@ function _cb_admin_init(): void {
 	}
 	if ( $inst->do_set_page_on_front_option ) {
 		$path = \wpinc\plex\custom_rewrite\build_full_path();
-		if ( ! empty( $path ) ) {
+		if ( '' !== $path ) {
 			$fp = get_page_by_path( $path );
 			if ( $fp instanceof \WP_Post ) {
 				update_option( 'page_on_front', $fp->ID );
@@ -464,7 +461,7 @@ function _cb_parse_query( \WP_Query $query ): void {
 			'post_status' => 'publish,future,draft,pending,private',
 		)
 	);
-	if ( $ps ) {
+	if ( is_array( $ps ) ) {
 		foreach ( $ps as $p ) {
 			$ids[] = $p->ID;
 		}

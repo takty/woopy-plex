@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -24,15 +24,13 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
-	if ( $format ) {
+	if ( is_string( $format ) ) {
 		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
 
 /**
  * Activates the option fields.
- *
- * @psalm-suppress HookNotFound
  *
  * @param array<string, mixed> $args {
  *     (Optional) Configuration arguments.
@@ -54,8 +52,8 @@ function activate( array $args = array() ): void {
 	$inst->vars = $args['vars'];  // @phpstan-ignore-line
 
 	if ( is_admin() ) {
-		add_action( 'admin_head', '\wpinc\plex\option_field\_cb_admin_head' );
-		add_action( 'admin_init', '\wpinc\plex\option_field\_cb_admin_init' );
+		add_action( 'admin_head', '\wpinc\plex\option_field\_cb_admin_head', 10, 0 );
+		add_action( 'admin_init', '\wpinc\plex\option_field\_cb_admin_init', 10, 0 );
 	} else {
 		add_filter( 'option_date_format', '\wpinc\plex\option_field\_cb_option_date_format' );
 		add_filter( 'option_time_format', '\wpinc\plex\option_field\_cb_option_time_format' );
@@ -77,7 +75,7 @@ function activate( array $args = array() ): void {
 function _cb_option_date_format( string $value ): string {
 	$inst = _get_instance();
 	$ret  = get_option( 'date_format_' . \wpinc\plex\get_query_key( $inst->vars ) );
-	if ( empty( $ret ) || ! is_string( $ret ) ) {
+	if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 		return $value;
 	}
 	return $ret;
@@ -94,7 +92,7 @@ function _cb_option_date_format( string $value ): string {
 function _cb_option_time_format( string $value ): string {
 	$inst = _get_instance();
 	$ret  = get_option( 'time_format_' . \wpinc\plex\get_query_key( $inst->vars ) );
-	if ( empty( $ret ) || ! is_string( $ret ) ) {
+	if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 		return $value;
 	}
 	return $ret;

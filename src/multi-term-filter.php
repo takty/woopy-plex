@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-31
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -85,10 +85,6 @@ function count_posts_with_terms( $post_type_s, array $term_taxonomies ): int {
  * @return int[]|null The ids.
  */
 function _get_term_taxonomy_ids( ?string $post_type = null ): ?array {
-	static $ret = null;
-	if ( $ret ) {
-		return $ret;
-	}
 	$inst = _get_instance();
 	if ( is_string( $post_type ) ) {
 		if ( ! isset( $inst->pt_fn[ $post_type ] ) ) {
@@ -113,12 +109,15 @@ function _get_term_taxonomy_ids( ?string $post_type = null ): ?array {
  * @return string|null Post type.
  */
 function _get_post_type_from_query_vars( array $query_vars ): ?string {
-	$pt = '';  // Must be initialized with '' to distinguish it from null.
-	if ( ! empty( $query_vars['post_type'] ) ) {
-		if ( is_array( $query_vars['post_type'] ) ) {
-			$pt = $query_vars['post_type'][0];
-		} else {
-			$pt = $query_vars['post_type'];
+	$pt = null;
+	if ( isset( $query_vars['post_type'] ) ) {
+		$v = $query_vars['post_type'];
+		if ( is_array( $v ) ) {
+			if ( ! empty( $v ) && is_string( $v[0] ) ) {
+				$pt = $v[0];
+			}
+		} elseif ( is_string( $v ) ) {
+			$pt = $v;
 		}
 	}
 	return $pt;
@@ -180,7 +179,7 @@ function _build_where_term_relationships( array $term_taxonomies ): string {
  */
 function _cb_get_adjacent_post_join( string $join, bool $_in_same_term, $_excluded_terms, string $_taxonomy, \WP_Post $post ): string {
 	$tts = _get_term_taxonomy_ids( $post->post_type );
-	if ( ! empty( $tts ) ) {
+	if ( is_array( $tts ) ) {
 		$join .= _build_join_term_relationships( count( $tts ), 'p' );
 	}
 	return $join;
@@ -200,7 +199,7 @@ function _cb_get_adjacent_post_join( string $join, bool $_in_same_term, $_exclud
  */
 function _cb_get_adjacent_post_where( string $where, bool $_in_same_term, $_excluded_terms, string $_taxonomy, \WP_Post $post ): string {
 	$tts = _get_term_taxonomy_ids( $post->post_type );
-	if ( ! empty( $tts ) ) {
+	if ( is_array( $tts ) ) {
 		$where .= ' AND ' . _build_where_term_relationships( $tts );
 	}
 	return $where;
@@ -224,7 +223,7 @@ function _cb_getarchives_join( string $sql_join, array $parsed_args ): string {
 	global $wpdb;
 	if ( is_string( $parsed_args['post_type'] ) ) {
 		$tts = _get_term_taxonomy_ids( $parsed_args['post_type'] );
-		if ( ! empty( $tts ) ) {
+		if ( is_array( $tts ) ) {
 			$sql_join .= _build_join_term_relationships( count( $tts ), $wpdb->posts );
 		}
 	}
@@ -243,7 +242,7 @@ function _cb_getarchives_join( string $sql_join, array $parsed_args ): string {
 function _cb_getarchives_where( string $sql_where, array $parsed_args ): string {
 	if ( is_string( $parsed_args['post_type'] ) ) {
 		$tts = _get_term_taxonomy_ids( $parsed_args['post_type'] );
-		if ( ! empty( $tts ) ) {
+		if ( is_array( $tts ) ) {
 			$sql_where .= ' AND ' . _build_where_term_relationships( $tts );
 		}
 	}
@@ -275,9 +274,9 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 		$tts = _get_term_taxonomy_ids( 'post' );
 	} else {
 		$pt  = _get_post_type_from_query_vars( $query->query_vars );
-		$tts = _get_term_taxonomy_ids( $pt );  // $pt is '' when the post type is unknown.
+		$tts = is_string( $pt ) ? _get_term_taxonomy_ids( $pt ) : null;  // $pt is '' when the post type is unknown.
 	}
-	if ( empty( $tts ) ) {
+	if ( ! is_array( $tts ) ) {
 		return $join;
 	}
 	global $wpdb;
@@ -310,9 +309,9 @@ function _cb_posts_where( string $where, \WP_Query $query ): string {
 		$tts = _get_term_taxonomy_ids( 'post' );
 	} else {
 		$pt  = _get_post_type_from_query_vars( $query->query_vars );
-		$tts = _get_term_taxonomy_ids( $pt );  // $pt is '' when the post type is unknown.
+		$tts = is_string( $pt ) ? _get_term_taxonomy_ids( $pt ) : null;  // $pt is '' when the post type is unknown.
 	}
-	if ( empty( $tts ) ) {
+	if ( ! is_array( $tts ) ) {
 		return $where;
 	}
 	global $wpdb;
@@ -346,7 +345,7 @@ function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
 		if ( preg_match( "/$g/", $groupby ) ) {
 			return $groupby;
 		}
-		if ( empty( trim( $groupby ) ) ) {
+		if ( '' === trim( $groupby ) ) {
 			return $g;
 		}
 		$groupby .= ", $g";

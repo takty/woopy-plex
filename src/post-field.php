@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2024-03-07
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
-	if ( $format ) {
+	if ( is_string( $format ) ) {
 		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
@@ -85,7 +85,7 @@ function activate( array $args = array() ): void {
 		if ( did_action( 'widgets_init' ) ) {
 			_cb_widgets_init();
 		} else {
-			add_action( 'widgets_init', '\wpinc\plex\post_field\_cb_widgets_init' );
+			add_action( 'widgets_init', '\wpinc\plex\post_field\_cb_widgets_init', 10, 0 );
 		}
 	}
 	if ( is_admin() || wp_doing_ajax() ) {
@@ -119,7 +119,7 @@ function get_the_title( ?\WP_Post $post, ?string $key = null ): string {
 		$inst = _get_instance();
 		if ( in_array( $p->post_type, $inst->post_types, true ) ) {
 			$t = _get_title( $p, $key );
-			if ( null !== $t ) {
+			if ( is_string( $t ) ) {
 				return $t;
 			}
 		}
@@ -144,7 +144,7 @@ function get_the_content( ?\WP_Post $post, ?string $key = null ): string {
 		in_array( $p->post_type, $inst->post_types, true )
 	) {
 		$c = _get_content( $p, $key );
-		if ( null !== $c ) {
+		if ( is_string( $c ) ) {
 			return $c;
 		}
 	}
@@ -185,7 +185,7 @@ function _cb_the_title( string $title, int $id ): string {
 		in_array( $p->post_type, $inst->post_types, true )
 	) {
 		$t = _get_title( $p );
-		if ( null !== $t ) {
+		if ( is_string( $t ) ) {
 			return $t;
 		}
 	}
@@ -211,12 +211,12 @@ function _get_title( \WP_Post $post, ?string $key = null ): ?string {
 	}
 	$id  = $post->ID;
 	$ret = get_post_meta( $id, $inst->key_pre_title . $key, true );
-	if ( empty( $ret ) || ! is_string( $ret ) ) {
+	if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 		return null;
 	}
 
 	if ( ! is_admin() ) {
-		if ( ! empty( $post->post_password ) ) {
+		if ( ! empty( $post->post_password ) ) {  // Same as post-template.php of WordPress core.
 			/* translators: %s: Protected post title. */
 			$f   = __( 'Protected: %s' );
 			$f   = apply_filters( 'protected_title_format', $f, $post );
@@ -255,7 +255,7 @@ function _cb_the_content( string $content ): string {
 		in_array( $p->post_type, $inst->post_types, true )
 	) {
 		$c = _get_content( $p );
-		if ( null !== $c ) {
+		if ( is_string( $c ) ) {
 			remove_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
 			$c = apply_filters( 'the_content', $c );
 			add_filter( 'the_content', '\wpinc\plex\post_field\_cb_the_content' );
@@ -283,7 +283,7 @@ function _get_content( \WP_Post $post, ?string $key = null ): ?string {
 		return null;
 	}
 	$ret = get_post_meta( $post->ID, $inst->key_pre_content . $key, true );
-	if ( empty( $ret ) || ! is_string( $ret ) ) {
+	if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 		return null;
 	}
 	return $ret;
@@ -339,11 +339,11 @@ function _cb_widgets_init(): void {
  * Callback function for 'save_post_{$post_type}' action.
  *
  * @access private
- * @psalm-suppress RedundantCondition
  *
  * @param int $post_id Post ID.
  */
 function _cb_save_post( int $post_id ): void {
+	/** @psalm-suppress RedundantCondition */  // phpcs:ignore
 	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 		return;
 	}
@@ -358,7 +358,7 @@ function _cb_save_post( int $post_id ): void {
 		if ( ! is_string( $nonce ) ) {
 			continue;
 		}
-		if ( ! wp_verify_nonce( sanitize_key( $nonce ), "post_$key" ) ) {
+		if ( false === wp_verify_nonce( sanitize_key( $nonce ), "post_$key" ) ) {
 			continue;
 		}
 		$key_t = $inst->key_pre_title . $key;

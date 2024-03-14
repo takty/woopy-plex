@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-11-06
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -23,7 +23,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
-	if ( $format ) {
+	if ( is_string( $format ) ) {
 		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
@@ -112,7 +112,7 @@ function _cb_has_nav_menu( $has_nav_menu, $location ) {
 		$id  = "{$location}-" . str_replace( '_', '-', $key );
 		if ( isset( $nms[ $id ] ) ) {
 			$locations    = get_nav_menu_locations();
-			$has_nav_menu = ! empty( $locations[ $id ] );
+			$has_nav_menu = isset( $locations[ $id ] );
 		}
 	}
 	return $has_nav_menu;
@@ -132,8 +132,7 @@ function _cb_wp_nav_menu_args( array $args ): array {
 	if ( \wpinc\plex\get_default_key() !== $key ) {
 		if (
 			isset( $args['theme_location'] ) &&
-			is_string( $args['theme_location'] ) &&
-			! empty( $args['theme_location'] )
+			is_string( $args['theme_location'] ) && '' !== $args['theme_location']  // Check for non-empty-string.
 		) {
 			$loc = $args['theme_location'];
 			$id  = "{$loc}-" . str_replace( '_', '-', $key );

@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-31
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -15,9 +15,6 @@ require_once __DIR__ . '/pseudo-front.php';
 
 /**
  * Activates the page for posts.
- * '@psalm-suppress' used because hooks "option_{$option}" is not recognized.
- *
- * @psalm-suppress HookNotFound
  */
 function activate(): void {
 	static $activated = 0;

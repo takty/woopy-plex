@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-19
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -75,7 +75,7 @@ function get_argument_key( $args, ?array $vars = null ): string {
 			)
 		);
 		$key = str_replace( '-', '_', $key );
-	} elseif ( is_string( $args ) && ! empty( $args ) ) {
+	} elseif ( is_string( $args ) && '' !== $args ) {  // Check for non-empty-string.
 		$key = str_replace( '-', '_', $args );
 	} else {
 		$key = get_query_key( $vars );
@@ -182,7 +182,7 @@ function get_admin_label( array $slugs, array $slug_to_label, ?string $filter = 
 		},
 		$slugs
 	);
-	if ( ! empty( $filter ) ) {
+	if ( is_string( $filter ) && '' !== $filter ) {  // Check for non-empty-string.
 		return sprintf( $filter, ...$ls );
 	}
 	return implode( ' ', $ls );

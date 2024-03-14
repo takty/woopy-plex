@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2023-10-24
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -68,7 +68,7 @@ function add_admin_labels( array $slug_to_label, ?string $format = null ): void 
 	$inst = _get_instance();
 
 	$inst->slug_to_label = array_merge( $inst->slug_to_label, $slug_to_label );  // @phpstan-ignore-line
-	if ( $format ) {
+	if ( is_string( $format ) ) {
 		$inst->label_format = $format;  // @phpstan-ignore-line
 	}
 }
@@ -140,6 +140,7 @@ function _add_hooks( array $txs, array $txs_desc ): void {
 		}
 	} else {
 		foreach ( $txs_desc as $tx ) {
+			/** @psalm-suppress HookNotFound */  // phpcs:ignore
 			add_filter( "{$tx}_description", '\wpinc\plex\term_field\_cb_taxonomy_description', 10, 3 );
 		}
 	}
@@ -164,7 +165,7 @@ function get_term_name( int $term_id = 0, bool $singular = false, $args = null )
 		if ( \wpinc\plex\get_default_key( $inst->vars ) === $key ) {
 			if ( $singular && in_array( $tx, $inst->txs_default_sg_name, true ) ) {
 				$sn = get_term_meta( $term_id, $inst->key_default_sg_name, true );
-				if ( ! empty( $sn ) ) {
+				if ( is_string( $sn ) && '' !== $sn ) {  // Check for non-empty-string.
 					$ret = $sn;
 				}
 			}
@@ -173,13 +174,13 @@ function get_term_name( int $term_id = 0, bool $singular = false, $args = null )
 			$sn   = get_term_meta( $term_id, $inst->key_pre_sg_name . $key, true );
 
 			if ( $singular && in_array( $tx, $inst->txs_sg_name, true ) ) {
-				$ret = empty( $sn ) ? $name : $sn;
+				$ret = ( '' === $sn ) ? $name : $sn;
 			} else {
-				$ret = empty( $name ) ? $sn : $name;
+				$ret = ( '' === $name ) ? $sn : $name;
 			}
 		}
 	}
-	return empty( $ret ) ? _get_term_field( 'name', $term_id ) : $ret;  // @phpstan-ignore-line
+	return ( ! is_string( $ret ) || '' === $ret ) ? _get_term_field( 'name', $term_id ) : $ret;  // @phpstan-ignore-line
 }
 
 /**
@@ -200,7 +201,7 @@ function term_description( int $term_id = 0, $args = null ): string {
 		if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
 			$ret = get_term_meta( $term_id, $inst->key_pre_description . $key, true );
 		}
-		if ( empty( $ret ) ) {
+		if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 			$ret = _get_term_field( 'description', $term_id );
 		}
 	}
@@ -303,7 +304,7 @@ function _cb_get_taxonomy( \WP_Term $t ): \WP_Term {
  * Replaces the name field of terms.
  *
  * @access private
- * @psalm-suppress UndefinedPropertyAssignment
+ * @salm-suppress UndefinedPropertyAssignment
  *
  * @param \WP_Term $t        Term object.
  * @param string   $taxonomy The taxonomy slug.
@@ -318,11 +319,12 @@ function _replace_name( \WP_Term $t, string $taxonomy, string $key ): void {
 	$sn   = '';
 	if ( in_array( $taxonomy, $inst->txs_sg_name, true ) ) {
 		$sn = get_term_meta( $t->term_id, $inst->key_pre_sg_name . $key, true );
-
-		$t->singular_name = empty( $sn ) ? $t->name : $sn;  // @phpstan-ignore-line
+		/** @psalm-suppress UndefinedPropertyAssignment */  // phpcs:ignore
+		$t->singular_name = ( ! is_string( $sn ) || '' === $sn ) ? $t->name : $sn;  // @phpstan-ignore-line
 	}
-	$ret = empty( $name ) ? $sn : $name;
-	if ( ! empty( $ret ) ) {
+	$ret = ( ! is_string( $name ) || '' === $name ) ? $sn : $name;  // Check for non-empty-string.
+	if ( '' !== $ret ) {
+		/** @psalm-suppress UndefinedPropertyAssignment */  // phpcs:ignore
 		$t->orig_name = $t->name;  // @phpstan-ignore-line
 		$t->name      = $ret;  // @phpstan-ignore-line
 	}
@@ -332,7 +334,6 @@ function _replace_name( \WP_Term $t, string $taxonomy, string $key ): void {
  * Adds singular name of default key.
  *
  * @access private
- * @psalm-suppress UndefinedPropertyAssignment
  *
  * @param \WP_Term $t Term object.
  */
@@ -340,8 +341,8 @@ function _add_singular_name( \WP_Term $t ): void {
 	$inst = _get_instance();
 	if ( ! isset( $t->singular_name ) ) {
 		$sn = get_term_meta( $t->term_id, $inst->key_default_sg_name, true );
-
-		$t->singular_name = empty( $sn ) ? $t->name : $sn;  // @phpstan-ignore-line
+		/** @psalm-suppress UndefinedPropertyAssignment */  // phpcs:ignore
+		$t->singular_name = ( ! is_string( $sn ) || '' === $sn ) ? $t->name : $sn;  // @phpstan-ignore-line
 	}
 }
 
@@ -370,7 +371,7 @@ function _cb_taxonomy_description( $value, int $term_id, string $context ) {
 	if ( \wpinc\plex\get_default_key( $inst->vars ) !== $key ) {
 		$ret = get_term_meta( $term_id, $inst->key_pre_description . $key, true );
 	}
-	if ( empty( $ret ) ) {
+	if ( ! is_string( $ret ) || '' === $ret ) {  // Check for non-empty-string.
 		$ret = $value;
 	}
 	return $ret;
@@ -542,7 +543,7 @@ function _cb_edited_taxonomy( int $term_id ): void {
  * @param mixed  $val     Metadata value. Must be serializable if non-scalar.
  */
 function _modify_term_meta( int $term_id, string $key, $val ): void {
-	if ( empty( $val ) ) {
+	if ( null === $val || '' === $val ) {
 		delete_term_meta( $term_id, $key );
 	} else {
 		update_term_meta( $term_id, $key, $val );
