@@ -4,7 +4,7 @@
  *
  * @package Wpinc Plex
  * @author Takuto Yanagida
- * @version 2024-03-14
+ * @version 2024-06-26
  */
 
 declare(strict_types=1);
@@ -334,7 +334,8 @@ function _cb_admin_init(): void {
 		);
 	}
 	if ( $inst->do_set_page_on_front_option ) {
-		$path = \wpinc\plex\custom_rewrite\build_full_path();
+		$vars = \wpinc\plex\custom_rewrite\get_structure_vars();
+		$path = \wpinc\plex\custom_rewrite\build_full_path( array_fill_keys( $vars, '' ) );
 		if ( '' !== $path ) {
 			$fp = get_page_by_path( $path );
 			if ( $fp instanceof \WP_Post ) {
